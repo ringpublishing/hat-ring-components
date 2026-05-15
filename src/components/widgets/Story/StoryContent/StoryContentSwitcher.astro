@@ -99,7 +99,7 @@ const processedContent = AdditionalComponentHelper_insertComponentAtPattern(cont
 
                     const BlockComponent = getBlockType(_block);
                     return BlockComponent ? (
-                        <BlockComponent blockData={_block} widgetConfig={widgetConfig} context={context}/>
+                        <BlockComponent blockData={_block} widgetConfig={widgetConfig} context={context} extendableAttributes={extendableAttributes}/>
                     ) : null;
                 }
                 return <AdditionalComponentTemplate edge={_block} classNames={[]} defaultRender={renderBlock} context={context}/>

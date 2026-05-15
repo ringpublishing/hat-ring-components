@@ -1,5 +1,5 @@
 ---
-const { context, blockData }: UnorderedListBlockParams =
+const { context, blockData, extendableAttributes }: UnorderedListBlockParams =
   Astro.props as UnorderedListBlockParams;
 import { WidgetHelper_renderEmptyComponent } from "../../../../../helpers/WidgetHelper";
 import {LinkReplacerHelper_replaceLinks} from '../../../../../helpers/LinkReplacerHelper';
@@ -14,6 +14,7 @@ export interface UnorderedListBlockParams {
     indentLevel: number;
     styleType: string;
   };
+  extendableAttributes?: any;
 }
 let toRender: boolean | JSX.Element | string  = false;
 
@@ -22,6 +23,16 @@ if (!blockData?.entries?.length) {
 } else {
   blockData.entries = await Promise.all(blockData.entries.map(async (entry) => {
     let processed = await LinkReplacerHelper_replaceLinks(context, entry);
+    if (extendableAttributes?.contentTextTransformers?.length) {
+      for (const transformer of extendableAttributes.contentTextTransformers) {
+        processed = await transformer({
+          context,
+          text: processed,
+          blockData,
+          blockType: blockData.type,
+        });
+      }
+    }
     return SeoLinkWhitelistHelper_processLinks(context, processed);
   }));
 }

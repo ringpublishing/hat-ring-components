@@ -1,5 +1,5 @@
 ---
-const {context, blockData}: TableBlockParams = Astro.props as TableBlockParams;
+const {context, blockData, extendableAttributes}: TableBlockParams = Astro.props as TableBlockParams;
 import {WidgetHelper_renderEmptyComponent} from "../../../../../helpers/WidgetHelper";
 import {LinkReplacerHelper_replaceLinks} from '../../../../../helpers/LinkReplacerHelper';
 import {AppContext} from "../../../../../types/types";
@@ -27,6 +27,7 @@ export interface TableBlockParams {
             },
         ] | [];
     };
+    extendableAttributes?: any;
 }
 let toRender: boolean | JSX.Element = false;
 if (!blockData) {
@@ -37,6 +38,16 @@ UtilsHelper_asyncParallelForEach(blockData.rows, async (row) => {
     await UtilsHelper_asyncParallelForEach(row.cells, async (cell) => {
         if (cell.text) {
             cell.text = await LinkReplacerHelper_replaceLinks(context, cell.text);
+            if (extendableAttributes?.contentTextTransformers?.length) {
+              for (const transformer of extendableAttributes.contentTextTransformers) {
+                cell.text = await transformer({
+                  context,
+                  text: cell.text,
+                  blockData,
+                  blockType: blockData.type,
+                });
+              }
+            }
         }
     });
 });
