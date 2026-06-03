@@ -22,9 +22,7 @@ const allGeneralParts = GeneralParts;
 let queryFragment = '';
 let response: any = null;
 
-const isAjaxCall = UtilsHelper_getQueryParam('gridLocationWidgetType', context) === 'genericList';
-const isFirstCall = UtilsHelper_getQueryParam('isFirstCall', context) === '1';
-const offset = WidgetHelper_calculateOffsetForGenericListPagination(widgetConfig, currentPage, isAjaxCall, isFirstCall);
+const offset = WidgetHelper_calculateOffsetForGenericListPagination(widgetConfig, currentPage);
 
 if (offset >= 1000) {
     toRender = `<script>

@@ -23,7 +23,6 @@ const noMoreItems = (response?.data?.stories?.edges?.length || 0) <= 0 || (respo
 
     <script define:vars={{buttonId, gridLocation: widgetConfig.gridLocation, isMainSeoList: widgetConfig.mainSeoList, widgetType: widgetConfig.widgetType}}>
         const button = document.getElementById(buttonId);
-        let isFirstCall = true;
         button.addEventListener('click', loadMore);
 
         const seoObserver = new IntersectionObserver(entries => {
@@ -54,12 +53,7 @@ const noMoreItems = (response?.data?.stories?.edges?.length || 0) <= 0 || (respo
                 ajaxNextPageUrl.searchParams.set('page', nextPage);
                 ajaxNextPageUrl.searchParams.set('gridLocation', gridLocation);
                 ajaxNextPageUrl.searchParams.set('gridLocationWidgetType', widgetType);
-                if (isFirstCall) {
-                    ajaxNextPageUrl.searchParams.set('isFirstCall', 1);
-                    isFirstCall = false;
-                } else {
-                    ajaxNextPageUrl.searchParams.delete('isFirstCall');
-                }
+
                 const fetchedData = await fetch(ajaxNextPageUrl.href);
                 const html = await fetchedData.text();
                 const parser = new DOMParser();

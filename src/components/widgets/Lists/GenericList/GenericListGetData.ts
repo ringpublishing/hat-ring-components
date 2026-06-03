@@ -97,9 +97,7 @@ export async function GenericList_getData(context: AppContext, queryNodeFragment
         return flag.excludedFlag
     }) : null;
 
-    const isAjaxCall = UtilsHelper_getQueryParam('gridLocationWidgetType', context) === 'genericList';
-    const isFirstCall = UtilsHelper_getQueryParam('isFirstCall', context) === '1';
-    const offset = WidgetHelper_calculateOffsetForGenericListPagination(widgetConfig, currentPage, isAjaxCall, isFirstCall);
+    const offset = WidgetHelper_calculateOffsetForGenericListPagination(widgetConfig, currentPage);
     const queryForDynamicName = getQueryForDynamicName(context, widgetConfig);
 
     const variables: any = {

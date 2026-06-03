@@ -29,9 +29,7 @@ export async function SeoListGridPrevNext(context: AppContext) {
         return {};
     }
     const currentPage = UtilsHelper_parsePositiveIntFromString(UtilsHelper_getQueryParam('page', context)) || 1;
-    const isAjaxCall = UtilsHelper_getQueryParam('gridLocationWidgetType', context) === 'genericList';
-    const isFirstCall = UtilsHelper_getQueryParam('isFirstCall', context) === '1';
-    const offset = WidgetHelper_calculateOffsetForGenericListPagination(foundGenericList, currentPage, isAjaxCall, isFirstCall);
+    const offset = WidgetHelper_calculateOffsetForGenericListPagination(foundGenericList, currentPage);
 
     if (offset >= MAX_OFFSET) {
         return {}
