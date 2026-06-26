@@ -6,6 +6,7 @@ export interface EmbeddedApplicationBlockParams {
             html: string;
         }
     }
+    extendableAttributes?: any;
 }
 
 const {blockData} = Astro.props as EmbeddedApplicationBlockParams;

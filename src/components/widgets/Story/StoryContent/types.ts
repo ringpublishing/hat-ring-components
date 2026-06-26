@@ -16,6 +16,14 @@ export interface StoryContentExtendableAttributes {
     render?: (defaultStyles) => JSX.Element | null,
     getCssModule?: (defaultStyles) => string | null,
     getDataQueryStoryFragment?: string | null,
+    contentTextTransformers?: Array<(
+        params: {
+            context: AppContext,
+            text: string,
+            blockData?: any,
+            blockType?: string,
+        }
+    ) => Promise<string> | string>,
 }
 
 export interface StoryContentParams extends WidgetParams {
@@ -63,4 +71,5 @@ export interface ImageBlockParams {
     }
     widgetConfig: StoryContentWidgetConfig,
     context: AppContext
+    extendableAttributes?: StoryContentExtendableAttributes,
 }

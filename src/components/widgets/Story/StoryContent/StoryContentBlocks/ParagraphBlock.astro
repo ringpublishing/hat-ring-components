@@ -1,9 +1,10 @@
 ---
-const { context, blockData }: ParagraphBlockParams = Astro.props as ParagraphBlockParams;
+const { context, blockData, extendableAttributes }: ParagraphBlockParams = Astro.props as ParagraphBlockParams;
 import { WidgetHelper_renderEmptyComponent } from "../../../../../helpers/WidgetHelper";
 import {LinkReplacerHelper_replaceLinks} from '../../../../../helpers/LinkReplacerHelper';
-import { SeoLinkWhitelistHelper_processLinks } from "../../../../../helpers/seo/SeoLinkWhitelistHelper"; 
+import { SeoLinkWhitelistHelper_processLinks } from "../../../../../helpers/seo/SeoLinkWhitelistHelper";
 import { AppContext } from "../../../../../types/types";
+import { StoryContentExtendableAttributes } from "../types";
 
 export interface ParagraphBlockParams {
   context: AppContext;
@@ -11,6 +12,7 @@ export interface ParagraphBlockParams {
     type: string;
     text: string;
   };
+  extendableAttributes?: StoryContentExtendableAttributes;
 }
 let toRender: boolean | JSX.Element | string = false;
 if (!blockData) {
@@ -18,6 +20,16 @@ if (!blockData) {
 }
 
 blockData.text = await LinkReplacerHelper_replaceLinks(context, blockData.text);
+if (extendableAttributes?.contentTextTransformers?.length) {
+  for (const transformer of extendableAttributes.contentTextTransformers) {
+    blockData.text = await transformer({
+      context,
+      text: blockData.text,
+      blockData,
+      blockType: blockData.type,
+    });
+  }
+}
 blockData.text = await SeoLinkWhitelistHelper_processLinks(context, blockData.text);
 ---
 

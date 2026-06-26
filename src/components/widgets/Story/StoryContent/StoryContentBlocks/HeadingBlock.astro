@@ -1,7 +1,8 @@
 ---
-const { context, blockData }: HeadingBlockParams = Astro.props as HeadingBlockParams;
+const { context, blockData, extendableAttributes }: HeadingBlockParams = Astro.props as HeadingBlockParams;
 import { WidgetHelper_renderEmptyComponent } from "../../../../../helpers/WidgetHelper";
 import {LinkReplacerHelper_replaceLinks} from '../../../../../helpers/LinkReplacerHelper';
+import { SeoLinkWhitelistHelper_processLinks } from "../../../../../helpers/seo/SeoLinkWhitelistHelper";
 import { AppContext } from "../../../../../types/types";
 import _ from "lodash";
 
@@ -12,6 +13,7 @@ export interface HeadingBlockParams {
     text: string;
     level: number;
   };
+  extendableAttributes?: any;
 }
 let toRender: boolean | JSX.Element = false;
 
@@ -21,6 +23,17 @@ if (!blockData) {
 const HeadingTag = "h" + _.clamp(blockData.level, 2, 6);
 
 blockData.text = await LinkReplacerHelper_replaceLinks(context, blockData.text);
+if (extendableAttributes?.contentTextTransformers?.length) {
+  for (const transformer of extendableAttributes.contentTextTransformers) {
+    blockData.text = await transformer({
+      context,
+      text: blockData.text,
+      blockData,
+      blockType: blockData.type,
+    });
+  }
+}
+blockData.text = await SeoLinkWhitelistHelper_processLinks(context, blockData.text);
 ---
 
 {

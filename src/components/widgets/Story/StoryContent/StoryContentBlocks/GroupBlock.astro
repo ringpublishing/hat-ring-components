@@ -1,5 +1,5 @@
 ---
-const {blockData, widgetConfig, context} = Astro.props;
+const {blockData, widgetConfig, context, extendableAttributes} = Astro.props;
 import {default as StoryContentSwitcher} from "../StoryContentSwitcher.astro";
 import {AppContext} from "../../../../../types/types";
 
@@ -13,9 +13,10 @@ export interface GroupBlockParams {
         height: number;
     }
     context: AppContext;
+    extendableAttributes?: any;
 }
 ---
 
 <section class={`GroupBlock align${blockData.alignment} ${blockData.name}`}>
-    <StoryContentSwitcher content={blockData.elements} widgetConfig={widgetConfig} context={context}/>
+    <StoryContentSwitcher content={blockData.elements} widgetConfig={widgetConfig} context={context} extendableAttributes={extendableAttributes}/>
 </section>
