@@ -13,7 +13,11 @@ interface RedisCacheValue {
     data: string;
     ttl: number | undefined;
     expirationTimestamp: number | undefined;
+    tags?: string[];
 }
+
+const DEFAULT_TAG_TTL_SECONDS = 60;
+const DEFAULT_TAG_REFRESH_INTERVAL_SECONDS = 3600;
 
 export class RedisProvider {
     client: RedisClientType;
@@ -25,6 +29,9 @@ export class RedisProvider {
     maxReInitialize: number;
     currentReInitialize: number;
     isReconnecting: boolean;
+    tagTTL: number;
+    tagRefreshInterval: number;
+    lastTagRefresh: Map<string, number>;
 
     constructor() {
         this.url = process.env.REDIS_RW;
@@ -35,6 +42,15 @@ export class RedisProvider {
         this.maxReInitialize = 10;
         this.currentReInitialize = 0;
         this.isReconnecting = false;
+        this.tagTTL = this._parsePositiveIntOrDefault(
+            process.env.CACHE_TAG_TTL ?? process.env.CACHE_TTL,
+            DEFAULT_TAG_TTL_SECONDS
+        );
+        this.tagRefreshInterval = this._parsePositiveIntOrDefault(
+            process.env.CACHE_TAG_REFRESH_INTERVAL,
+            DEFAULT_TAG_REFRESH_INTERVAL_SECONDS
+        ) * 1000; // ms
+        this.lastTagRefresh = new Map();
 
         setInterval(async () => {
             if (!this.client) {
@@ -197,12 +213,14 @@ export class RedisProvider {
         if (ttl) {
             expirationTimestamp = Date.now() + ttl * 1000;
         }
-        const setValue = JSON.stringify({data: value, ttl, expirationTimestamp} as RedisCacheValue);
+        const tagsArray = (tags && typeof tags === 'object') ? tags as string[] : undefined;
+        const setValue = JSON.stringify({data: value, ttl, expirationTimestamp, tags: tagsArray} as RedisCacheValue);
         try {
             await this.client.set(key, setValue);
-            if (tags && typeof tags === 'object') {
-                for (const tag of tags) {
+            if (tagsArray) {
+                for (const tag of tagsArray) {
                     await this.client.sAdd('tag:' + tag, key);
+                    await this.client.expire('tag:' + tag, this.tagTTL);
                 }
             }
             MonitoringProvider.counter('info.RedisProvider.set');
@@ -225,6 +243,7 @@ export class RedisProvider {
                 return null;
             }
             const parsedData = this._parseResponse(data, key);
+            this._refreshTagsExpire(parsedData.tags);
             MonitoringProvider.counter('info.RedisProvider.get');
             return parsedData.data;
         } catch (err) {
@@ -247,6 +266,7 @@ export class RedisProvider {
                 return null;
             }
             const parsedData = this._parseResponse(data, key);
+            this._refreshTagsExpire(parsedData.tags);
             MonitoringProvider.counter('info.RedisProvider.getDecoratedCachedObject');
             return parsedData;
         } catch (err) {
@@ -356,6 +376,33 @@ export class RedisProvider {
         }
     }
 
+    _parsePositiveIntOrDefault(value: string | undefined, fallback: number): number {
+        const parsedValue = Number.parseInt(value || '', 10);
+        return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : fallback;
+    }
+
+    /**
+     * Fire-and-forget: refresh EXPIRE on tag sets associated with a cached value.
+     * Keeps tags "hot" in LRU as long as their data keys are being read.
+     * Throttled per tag — only refreshes once per tagRefreshInterval (default 1h).
+     */
+    _refreshTagsExpire(tags?: string[]): void {
+        if (!tags || tags.length === 0 || !this.client) {
+            return;
+        }
+        const now = Date.now();
+        for (const tag of tags) {
+            const lastRefresh = this.lastTagRefresh.get(tag);
+            if (lastRefresh && (now - lastRefresh) < this.tagRefreshInterval) {
+                continue;
+            }
+            this.lastTagRefresh.set(tag, now);
+            this.client.expire('tag:' + tag, this.tagTTL).catch(() => {
+                // Silent fail — non-critical operation
+            });
+        }
+    }
+
 
     async stats() {
         if (!this.client) {
@@ -382,7 +429,39 @@ export class RedisProvider {
         if (!this.client) {
             await this.initialize();
         }
-        return await this.client.sMembers(`tag:${tag}`);
+        const keys = await this.client.sMembers(`tag:${tag}`);
+
+        if (!keys || keys.length === 0) {
+            return keys;
+        }
+
+        // Lazy cleanup: check which keys still exist in Redis (single pipeline round-trip)
+        const pipeline = this.client.multi();
+        for (const key of keys) {
+            pipeline.exists(key);
+        }
+        const existsResults = (await pipeline.exec()) as unknown as number[];
+
+        const aliveKeys: string[] = [];
+        const deadKeys: string[] = [];
+
+        for (let i = 0; i < keys.length; i++) {
+            if (existsResults[i]) {
+                aliveKeys.push(keys[i]);
+            } else {
+                deadKeys.push(keys[i]);
+            }
+        }
+
+        // Fire-and-forget: remove dead keys from the tag set
+        if (deadKeys.length > 0) {
+            MonitoringProvider.gauge('info.RedisProvider.getKeysByTag.staleKeysRemoved', deadKeys.length);
+            this.client.sRem(`tag:${tag}`, deadKeys).catch(() => {
+                MonitoringProvider.counter('error.RedisProvider.getKeysByTag.sRemFailed');
+            });
+        }
+
+        return aliveKeys;
     }
 
     async getValuesByTag(tag) {
@@ -405,6 +484,7 @@ export class RedisProvider {
 
     async addTag(tag, key) {
         await this.client.sAdd('tag:' + tag, key);
+        await this.client.expire('tag:' + tag, this.tagTTL);
     }
 
     async flushAllAsync(): Promise<any> {
