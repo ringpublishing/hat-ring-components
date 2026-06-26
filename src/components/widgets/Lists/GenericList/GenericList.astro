@@ -18,7 +18,7 @@ import {GenericList_getData} from "./GenericListGetData";
 let toRender: boolean | string = false;
 const currentPage = UtilsHelper_parsePositiveIntFromString(UtilsHelper_getQueryParam('page', context)) || 1;
 
-const allGeneralParts = GeneralParts;
+const allGeneralParts = Object.assign({}, GeneralParts, extendableAttributes?.generalParts);
 let queryFragment = '';
 let response: any = null;
 
