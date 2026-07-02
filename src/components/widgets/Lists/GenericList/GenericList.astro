@@ -26,7 +26,11 @@ const isAjaxCall = UtilsHelper_getQueryParam('gridLocationWidgetType', context) 
 const isFirstCall = UtilsHelper_getQueryParam('isFirstCall', context) === '1';
 const offset = WidgetHelper_calculateOffsetForGenericListPagination(widgetConfig, currentPage, isAjaxCall, isFirstCall);
 
-if (offset >= 1000) {
+// FTS API limit is 1000 items by default. Enable deep pagination with DEEP_PAGINATION_ENABLED=1 env flag to allow unlimited pagination.
+const isDeepPaginationEnabled = import.meta.env.DEEP_PAGINATION_ENABLED === '1' || process.env.DEEP_PAGINATION_ENABLED === '1';
+const MAX_OFFSET = isDeepPaginationEnabled ? undefined : 1000;
+
+if (MAX_OFFSET !== undefined && offset >= MAX_OFFSET) {
     toRender = `<script>
         window.location.href = '/404';
     </script>`

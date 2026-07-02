@@ -12,8 +12,9 @@ import {
 } from "../../../helpers/GenericListHelper";
 
 export async function SeoListGridPrevNext(context: AppContext) {
-    //FTS limit is 1000
-    const MAX_OFFSET = 1000;
+    // FTS API limit is 1000 items by default. Enable deep pagination with DEEP_PAGINATION_ENABLED=1 env flag to allow unlimited pagination.
+    const isDeepPaginationEnabled = process.env.DEEP_PAGINATION_ENABLED === '1';
+    const MAX_OFFSET = isDeepPaginationEnabled ? undefined : 1000;
     const actualPageType = context.siteContentType;
     if (actualPageType !== SiteContentType.SiteNode || context.url === '/') {
         return {};
@@ -33,13 +34,13 @@ export async function SeoListGridPrevNext(context: AppContext) {
     const isFirstCall = UtilsHelper_getQueryParam('isFirstCall', context) === '1';
     const offset = WidgetHelper_calculateOffsetForGenericListPagination(foundGenericList, currentPage, isAjaxCall, isFirstCall);
 
-    if (offset >= MAX_OFFSET) {
+    if (MAX_OFFSET !== undefined && offset >= MAX_OFFSET) {
         return {}
     }
 
     const data = await GenericList_getData(context, '', foundGenericList, {itemParts: []}, currentPage);
     let totalItems = _.get(data, 'data.stories.total', false);
-    if (totalItems > MAX_OFFSET) {
+    if (MAX_OFFSET !== undefined && totalItems > MAX_OFFSET) {
         totalItems = MAX_OFFSET;
     }
     const lastPage = WidgetHelper_getPaginationDataForGenericList(data, totalItems);

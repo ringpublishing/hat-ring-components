@@ -1,6 +1,9 @@
 import {UtilsHelper_convertToInt, UtilsHelper_parsePositiveIntFromString} from "./UtilsHelper";
 import {GenericListWidgetConfig} from "../components/widgets/Lists/GenericList/types";
-const MAX_OFFSET = 1000;
+
+// FTS API limit is 1000 items by default. Enable deep pagination with DEEP_PAGINATION_ENABLED=1 env flag to allow unlimited pagination.
+const isDeepPaginationEnabled = process.env.DEEP_PAGINATION_ENABLED === '1';
+const MAX_OFFSET = isDeepPaginationEnabled ? undefined : 1000;
 export function WidgetHelper_calculateOffsetForGenericListPagination(widgetConfig: GenericListWidgetConfig, currentPage: number, isAjaxCall: boolean, isFirstCall: boolean) {
     const perPageAllItems = UtilsHelper_convertToInt(widgetConfig?.perPageAllItems) || UtilsHelper_convertToInt(widgetConfig?.paginationElements);
     const postShiftValue = UtilsHelper_convertToInt(widgetConfig?.postShift) || 0;
@@ -18,6 +21,10 @@ export function WidgetHelper_calculateOffsetForGenericListPagination(widgetConfi
         offset = totalItemsBefore + postShiftValue;
     }
 
+    if (MAX_OFFSET === undefined) {
+        return Math.max(0, offset);
+    }
+
     return Math.min(MAX_OFFSET - perPageAllItems, Math.max(0, offset));
 }
 
@@ -25,6 +32,11 @@ export function WidgetHelper_getPaginationDataForGenericList(widgetConfig: Gener
     const perPageAllItems = UtilsHelper_convertToInt(widgetConfig?.perPageAllItems) || UtilsHelper_convertToInt(widgetConfig?.paginationElements);
 
     const pages = Math.ceil(totalItems / perPageAllItems);
+
+    if (MAX_OFFSET === undefined) {
+        return pages;
+    }
+
     const lastAllowedPage = Math.ceil((MAX_OFFSET - perPageAllItems) / perPageAllItems);
     const lastPage = Math.min(pages, lastAllowedPage);
 
