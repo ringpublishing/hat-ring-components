@@ -21,22 +21,31 @@ export const getFragment = () => {
     return {
         query: gql`fragment BasicWidgetImageSectionFragment on SectionItem {
             image {
-                url,
-                caption,
-            }
-            leads {
-                role {
-                    code
-                }
+                url
+                caption
+                preset { code }
                 image {
                     url
+                    width
+                    height
+                    presets { url role { code } }
+                }
+            }
+            leads {
+                role { code }
+                image { 
+                    url
+                    preset { code }
+                    image { presets { url role { code } } }
                 }
             }
             originalContent {
                 ... on Story {
                     image {
-                        url,
-                        caption,
+                        url
+                        caption
+                        preset { code }
+                        crop { width height x y }
                         image {
                             url
                             width

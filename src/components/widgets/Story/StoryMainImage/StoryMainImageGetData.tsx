@@ -10,6 +10,15 @@ export async function StoryMainImage_getData({widgetConfig, context}: StoryMainI
                 image {
                     url
                     caption
+                    preset {
+                        code
+                    }
+                    crop {
+                        height
+                        width
+                        x
+                        y
+                    }
                     image {
                         url
                         width

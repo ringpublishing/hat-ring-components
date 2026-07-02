@@ -76,6 +76,23 @@ export const getFragment = () => {
                 }
                 image {
                     url
+                    crop {
+                        width,
+                        height,
+                        y,
+                        x,
+                    }
+                    preset {
+                        code
+                    }
+                    image {
+                        presets {
+                            url
+                            role {
+                                code
+                            }
+                        }
+                    }
                 }
             }
             image {
@@ -85,6 +102,15 @@ export const getFragment = () => {
                     url
                     width
                     height
+                    presets {
+                        url
+                        role {
+                            code
+                        }
+                    }
+                }
+                preset {
+                    code
                 }
             }
         }`
