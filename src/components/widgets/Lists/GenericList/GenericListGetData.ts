@@ -59,28 +59,26 @@ export async function GenericList_getData(context: AppContext, queryNodeFragment
 
     switch (context.siteContentType) {
         case SiteContentType.Topic:
-            contentTypeFilter = 'topic: {in: [$topicId]}, category: {in: [$nodeCategoryId]}';
-            dynamicVariablesTypes.$nodeCategoryId = 'UUID!';
-            dynamicVariables.nodeCategoryId = nodeCategoryId;
+            contentTypeFilter = 'topic: {in: [$topicId]}, canonical: true';
             break;
         case SiteContentType.Author:
             if (!widgetConfig.customListUuid) {
-                contentTypeFilter = 'category: {in: [$topicId]}, author:{in:[$authorId]}';
+                contentTypeFilter = 'author:{in:[$authorId]}, canonical: true';
                 dynamicVariablesTypes.$authorId = 'UUID!';
                 contentFilterId = nodeCategoryId;
                 dynamicVariables.authorId = context.id;
             } else {
-                contentTypeFilter = 'category: {in: [$topicId]}';
+                contentTypeFilter = 'category: {in: [$topicId]}, canonical: true';
             }
             break;
         case SiteContentType.Story:
             dynamicVariablesTypes.$storyUuid = 'UUID!';
             dynamicVariables.storyUuid = contentFilterId;
             contentFilterId = nodeCategoryId;
-            contentTypeFilter = 'category: {in: [$topicId]}, id:{notIn: [$storyUuid]}';
+            contentTypeFilter = 'id:{notIn: [$storyUuid]}, canonical: true';
             break;
         default:
-            contentTypeFilter = 'category: {in: [$topicId]}';
+            contentTypeFilter = 'category: {in: [$topicId]}, canonical: true';
             break;
     }
     const searchPhraseFragment = searchPhrase ? `, phrase: $searchPhrase` : '';
@@ -114,7 +112,7 @@ export async function GenericList_getData(context: AppContext, queryNodeFragment
         variables.searchPhrase = searchPhrase;
     }
 
-
+    
     const query = gql`
         query($topicId: UUID!, $limit: Int!, $excludedFlags: [String!], $offset: Int! ${mappedDynamicVariablesTypes}){
             stories: stories(filter:{${contentTypeFilter}, flag: {notIn:$excludedFlags}},limit: $limit, offset: $offset ${searchPhraseFragment} ){
