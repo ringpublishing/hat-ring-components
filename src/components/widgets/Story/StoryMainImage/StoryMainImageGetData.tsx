@@ -34,6 +34,12 @@ export async function StoryMainImage_getData({widgetConfig, context}: StoryMainI
                         license {
                             note
                         }
+                        presets {
+                            url
+                            role {
+                                code
+                            }
+                        }
                     }
                 }
             }
