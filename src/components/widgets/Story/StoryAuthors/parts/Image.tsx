@@ -1,7 +1,7 @@
 import React from 'react';
 import {AppContext, SiteContentType} from "../../../../../types/types";
 import {StoryAuthorsWidgetConfig} from "../types";
-import {Author} from "@ringpublishing/graphql-api-client-got/lib/types/websites-api";
+import {Author} from "@ringpublishing/graphql-api-client-got/dist/types/websites-api";
 import {RingImage} from "../../../../common/RingImage";
 import {ImageHelper_getImageDimensionsFromObject} from "../../../../../helpers/ImageHelper";
 

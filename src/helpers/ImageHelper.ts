@@ -6,7 +6,7 @@ import {RingImageObject} from "../renderlessComponents/common/RingImageObject";
 import {ImageFormat} from "@ringpublishing/accelerator-images";
 import _ from "lodash";
 import {StoryMainImageResponse} from "../components/widgets/Story/StoryMainImage/types";
-import {ImageBlock, MainImageReference} from "@ringpublishing/graphql-api-client-got/lib/types/websites-api";
+import {ImageBlock, MainImageReference} from "@ringpublishing/graphql-api-client-got/dist/types/websites-api";
 
 export async function ImageHelper_getDefaultImageData(context, width, height, transform = TransformType.ResizeCropAuto, format: ImageFormat[] = ['png']) {
 

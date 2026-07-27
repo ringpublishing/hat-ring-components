@@ -1,4 +1,4 @@
-import {ContentBlock, Story} from "@ringpublishing/graphql-api-client-got/lib/types/websites-api";
+import {ContentBlock, Story} from "@ringpublishing/graphql-api-client-got/dist/types/websites-api";
 import * as convert from "xml-js";
 import _ from "lodash";
 import {UtilsHelper_ensureHttps} from "./UtilsHelper";

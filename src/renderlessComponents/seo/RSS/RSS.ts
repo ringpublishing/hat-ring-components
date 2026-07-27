@@ -6,7 +6,7 @@ import {
 } from "../../../helpers/ConfigHelper";
 import {WebsiteApiProvider} from "../../../providers/WebsiteApiProvider";
 import _ from "lodash";
-import {ImageBlock, Story, StoryEdge} from "@ringpublishing/graphql-api-client-got/lib/types/websites-api";
+import {ImageBlock, Story, StoryEdge} from "@ringpublishing/graphql-api-client-got/dist/types/websites-api";
 import {
     UtilsHelper_convertToInt, UtilsHelper_getDomain, UtilsHelper_getQueryParam,
     UtilsHelper_parsePositiveIntFromString

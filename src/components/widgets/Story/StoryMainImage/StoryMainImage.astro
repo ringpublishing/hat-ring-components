@@ -15,7 +15,7 @@ import {
     ImageHelper_getImageDimensionsWithAspectRatio
 } from "../../../../helpers/ImageHelper";
 import {UtilsHelper_convertToInt} from "../../../../helpers/UtilsHelper";
-import {MainImageReference} from "@ringpublishing/graphql-api-client-got/lib/types/websites-api";
+import {MainImageReference} from "@ringpublishing/graphql-api-client-got/dist/types/websites-api";
 import ImageMetaData from "../../../common/ImageMetaData.astro";
 
 const response = await StoryMainImage_getData({widgetConfig, context});

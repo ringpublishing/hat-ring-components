@@ -6,7 +6,7 @@ import {WidgetHelper_renderEmptyComponent} from "../../../../../helpers/WidgetHe
 import gql from "graphql-tag";
 import {DateHelper_convertDate} from "../../../../../helpers/DateHelper";
 import {StoryHelper_getLeadBlock} from "../../../../../helpers/StoryHelper";
-import {Story} from "@ringpublishing/graphql-api-client-got/lib/types/websites-api";
+import {Story} from "@ringpublishing/graphql-api-client-got/dist/types/websites-api";
 
 export default function Lead(
     {context, widgetConfig, data}:

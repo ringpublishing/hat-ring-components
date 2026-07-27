@@ -5,7 +5,7 @@ const {context, widgetConfig, author} = Astro.props as {
     widgetConfig: StoryAuthorsWidgetConfig,
     author: Author
 };
-import {Author} from "@ringpublishing/graphql-api-client-got/lib/types/websites-api";
+import {Author} from "@ringpublishing/graphql-api-client-got/dist/types/websites-api";
 import _ from "lodash";
 import {AppContext} from "../../../../../types/types";
 import {WidgetHelper_getWidgetCssClasses, WidgetHelper_renderEmptyComponent} from "../../../../../helpers/WidgetHelper";
