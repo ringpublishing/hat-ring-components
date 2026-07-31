@@ -6,16 +6,18 @@ import {AppContext} from "../../../../../types/types";
 import {BasicWidgetConfig, BasicWidgetResponseNode} from "../types";
 import {default as RingImage} from "../../../../common/RingImage.astro";
 import {
+    WidgetHelper_getAppropriateTeaserCode,
     WidgetHelper_getAppropriateTeaserImage,
     WidgetHelper_renderEmptyComponent,
 } from "../../../../../helpers/WidgetHelper";
 import gql from "graphql-tag";
 import {
     ImageHelper_getImageDimensionsFromObject,
-    ImageHelper_getImageDimensionsWithAspectRatio
+    ImageHelper_getImageDimensionsWithAspectRatio, ImageHelper_getImagePreset, ImageHelper_processImage
 } from "../../../../../helpers/ImageHelper";
 import {TransformType} from "../../../../../helpers/AcceleratorImagesHelper";
 import {UtilsHelper_convertToInt, UtilsHelper_isMobile} from "../../../../../helpers/UtilsHelper";
+import {MainImageReference} from "@ringpublishing/graphql-api-client-got/dist/types/websites-api";
 
 export const getFragment = () => {
     return {
@@ -35,8 +37,6 @@ export const getFragment = () => {
                 role { code }
                 image { 
                     url
-                    preset { code }
-                    image { presets { url role { code } } }
                 }
             }
             originalContent {
@@ -50,6 +50,7 @@ export const getFragment = () => {
                             url
                             width
                             height
+                            presets { url role { code } }
                         }
                     }
                 }
@@ -60,7 +61,6 @@ export const getFragment = () => {
 let toRender: boolean | string | JSX.Element = false;
 
 const image = data.image || data.originalContent?.image;
-let customTeaserImageUrl: string | null = null;
 
 if (!image || !image.url) {
     toRender = WidgetHelper_renderEmptyComponent('Image');
@@ -73,34 +73,28 @@ const sizes = isBig
 
 const preloadCount = UtilsHelper_isMobile(context) ? (Number(widgetConfig?.mobilePreloadImagesCount) || 0) : (Number(widgetConfig?.preloadImagesCount) || 0);
 const isPriority = (preloadCount >= itemIndex + 1) || false;
-const imageResizeCropMode = _.get(widgetConfig, 'imageResizeCropMode', 'cover');
-const croppedSrc = _.get(data, 'image.url');
-const originalSrc = _.get(data, 'originalContent.image.image.url');
-const imgSrc = widgetConfig?.useOriginalImage ? originalSrc : croppedSrc;
+
 const originalImageWidth = UtilsHelper_convertToInt(_.get(data, 'originalContent.image.image.width', 0));
 const originalImageHeight = UtilsHelper_convertToInt(_.get(data, 'originalContent.image.image.height', 0));
-let imageWidth = originalImageWidth;
-let imageHeight = originalImageHeight;
 
-if (widgetConfig.section_name || widgetConfig.sectionGroup) {
-    customTeaserImageUrl = await WidgetHelper_getAppropriateTeaserImage(widgetConfig, context, data.leads || [], isBig);
-}
-
-if (imageResizeCropMode === 'contain' && imageWidth !== 0 && imageHeight !== 0) {
-    const calculatedDimensions = ImageHelper_getImageDimensionsWithAspectRatio(imageWidth, imageHeight, sizes.width, sizes.height);
-    imageWidth = calculatedDimensions.width;
-    imageHeight = calculatedDimensions.height;
-} else {
-    imageWidth = sizes.width;
-    imageHeight = sizes.height;
-}
+const processedImage = await ImageHelper_processImage({
+    presetCode: (widgetConfig.section_name || widgetConfig.sectionGroup) ? await WidgetHelper_getAppropriateTeaserCode(widgetConfig, context) : null,
+    context,
+    widgetConfig,
+    imageSizes: sizes,
+    imageObj: image,
+    originalImageHeight,
+    originalImageWidth,
+    leads: data?.leads || [],
+    isBig,
+})
 
 const ringImageProps = toRender ? null : {
-    src: customTeaserImageUrl || imgSrc,
+    src: processedImage.url,
     alt: image.caption || data.title || '',
     transform: TransformType.ResizeCropAuto,
-    width: imageWidth,
-    height: imageHeight,
+    width: processedImage.width,
+    height: processedImage.height,
     priority: isPriority
 };
 ---

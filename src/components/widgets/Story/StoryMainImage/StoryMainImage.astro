@@ -12,63 +12,54 @@ import {
 import {
     ImageHelper_getImageMetaData,
     ImageHelper_getImageDimensionsFromObject,
-    ImageHelper_getImageDimensionsWithAspectRatio
+    ImageHelper_getImageDimensionsWithAspectRatio, ImageHelper_getImagePreset, ImageHelper_processImage
 } from "../../../../helpers/ImageHelper";
 import {UtilsHelper_convertToInt} from "../../../../helpers/UtilsHelper";
 import {MainImageReference} from "@ringpublishing/graphql-api-client-got/dist/types/websites-api";
 import ImageMetaData from "../../../common/ImageMetaData.astro";
 
 const response = await StoryMainImage_getData({widgetConfig, context});
-
-const imageDimensions = ImageHelper_getImageDimensionsFromObject(widgetConfig, context);
-const croppedSrc = _.get(response, 'data.story.image.url');
-const originalSrc = _.get(response, 'data.story.image.image.url');
-const imgSrc = widgetConfig?.useOriginalImage ? originalSrc : croppedSrc;
-
 const caption = _.get(response, 'data.story.image.caption', "");
-const imageResizeCropMode = _.get(widgetConfig, 'imageResizeCropMode', 'cover');
+const originalImageWidth = UtilsHelper_convertToInt(_.get(response, 'data.story.image.image.width', 0));
+const originalImageHeight = UtilsHelper_convertToInt(_.get(response, 'data.story.image.image.height', 0));
+const imageObj = _.get(response, 'data.story.image') as MainImageReference;
 
-const maxImageWidth = UtilsHelper_convertToInt(imageDimensions.width);
-const maxImageHeight = UtilsHelper_convertToInt(imageDimensions.height);
-const originalImageWidth = UtilsHelper_convertToInt(response?.data?.story?.image?.image?.width);
-const originalImageHeight = UtilsHelper_convertToInt(response?.data?.story?.image?.image?.height);
-let imageWidth = originalImageWidth;
-let imageHeight = originalImageHeight;
+const processedImage = await ImageHelper_processImage({
+    presetCode: _.get(imageObj, 'preset.code'),
+    imageObj,
+    widgetConfig,
+    imageSizes: ImageHelper_getImageDimensionsFromObject(widgetConfig, context),
+    context,
+    originalImageWidth,
+    originalImageHeight
+});
 
-if (imageResizeCropMode === 'contain' && imageWidth !== 0 && imageHeight !== 0) {
-    const calculatedDimensions = ImageHelper_getImageDimensionsWithAspectRatio(imageWidth, imageHeight, maxImageWidth, maxImageHeight);
-    imageWidth = calculatedDimensions.width;
-    imageHeight = calculatedDimensions.height;
-} else {
-    imageWidth = maxImageWidth;
-    imageHeight = maxImageHeight;
-}
 ---
 
 <div class={WidgetHelper_getWidgetCssClasses('StoryMainImage', widgetConfig, context)}>
-    {imgSrc && (
+    {processedImage.url && (
             <>
                 {widgetConfig.showLinkToImage ? (
-                        <a href={imgSrc} target="_blank" data-pswp-src={imgSrc} data-pswp-width={originalImageWidth}
+                        <a href={processedImage.url} target="_blank" data-pswp-src={processedImage.url} data-pswp-width={originalImageWidth}
                            data-pswp-height={originalImageHeight}>
                             <RingImage
                                     priority={true}
-                                    src={imgSrc}
+                                    src={processedImage.url}
                                     alt={caption}
                                     transform={TransformType.ResizeCropAuto}
-                                    width={imageWidth}
-                                    height={imageHeight}/>
+                                    width={processedImage.width}
+                                    height={processedImage.height}/>
                         </a>
                 ) : (
                         <RingImage
                                 priority={true}
-                                src={imgSrc}
+                                src={processedImage.url}
                                 alt={caption}
                                 transform={TransformType.ResizeCropAuto}
-                                width={imageWidth}
-                                height={imageHeight}/>
+                                width={processedImage.width}
+                                height={processedImage.height}/>
                 )}
-                <ImageMetaData imageMetaData={ImageHelper_getImageMetaData(_.get(response, 'data.story.image') as MainImageReference)}/>
+                <ImageMetaData imageMetaData={ImageHelper_getImageMetaData(imageObj)}/>
             </>
     )}
 </div>

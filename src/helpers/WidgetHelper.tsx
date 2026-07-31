@@ -115,8 +115,7 @@ export async function WidgetHelper_findWidgetConfig(context: AppContext, objToCo
     });
 }
 
-export async function WidgetHelper_getAppropriateTeaserImage(widgetConfig: BasicWidgetConfig | GenericListWidgetConfig, context: AppContext, leads: Array<any>, isBig = false): Promise<string | null> {
-    let customTeaserImageUrl = null;
+export async function WidgetHelper_getAppropriateTeaserCode(widgetConfig: BasicWidgetConfig | GenericListWidgetConfig, context: AppContext, isBig = false): Promise<string | null> {
     let customRole: string | null = null;
 
     if (widgetConfig.customTeasers) {
@@ -138,6 +137,14 @@ export async function WidgetHelper_getAppropriateTeaserImage(widgetConfig: Basic
             }
         }
     }
+
+    return customRole;
+}
+
+
+export async function WidgetHelper_getAppropriateTeaserImage(widgetConfig: BasicWidgetConfig | GenericListWidgetConfig, context: AppContext, leads: Array<any>, isBig = false): Promise<string | null> {
+    let customTeaserImageUrl = null;
+    let customRole = await WidgetHelper_getAppropriateTeaserCode(widgetConfig, context, isBig);
     if (customRole && customRole !== 'none') {
         const lead: any = leads?.find((lead) => lead?.role?.code === customRole);
         customTeaserImageUrl = lead?.image?.url;
