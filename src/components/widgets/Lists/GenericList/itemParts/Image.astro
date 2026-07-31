@@ -1,16 +1,12 @@
 ---
 import {
-    ImageHelper_getImageDimensionsFromObject,
-    ImageHelper_getImageDimensionsWithAspectRatio, ImageHelper_getImagePreset, ImageHelper_processImage
+    ImageHelper_getImageDimensionsFromObject, ImageHelper_processImage
 } from "../../../../../helpers/ImageHelper";
 const {itemIndex, context, widgetConfig, data} = Astro.props;
-
 import React from 'react';
-import {AppContext} from "../../../../../types/types";
 import {default as RingImage} from "../../../../common/RingImage.astro";
 import {
     WidgetHelper_getAppropriateTeaserCode,
-    WidgetHelper_getAppropriateTeaserImage,
     WidgetHelper_renderEmptyComponent
 } from "../../../../../helpers/WidgetHelper";
 import gql from "graphql-tag";

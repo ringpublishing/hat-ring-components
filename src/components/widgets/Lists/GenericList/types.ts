@@ -45,6 +45,7 @@ export interface GenericListWidgetConfig extends AbstractWidgetConfig {
     }>,
     "linkLabel": string,
     "mainSeoList": boolean,
+    "useOriginalImage"?: boolean,
     customTeasers?: Array<{
         'Teaser code name'?: string,
         'For mobile'?: 'on',

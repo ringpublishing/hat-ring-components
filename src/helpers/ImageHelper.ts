@@ -5,7 +5,7 @@ import {TransformType} from "./AcceleratorImagesHelper";
 import {RingImageObject} from "../renderlessComponents/common/RingImageObject";
 import {ImageFormat} from "@ringpublishing/accelerator-images";
 import _ from "lodash";
-import {StoryMainImageResponse} from "../components/widgets/Story/StoryMainImage/types";
+import {StoryMainImageResponse, StoryMainImageWidgetConfig} from "../components/widgets/Story/StoryMainImage/types";
 import {ImageBlock, MainImageReference} from "@ringpublishing/graphql-api-client-got/dist/types/websites-api";
 import {WidgetHelper_getAppropriateTeaserCode, WidgetHelper_getAppropriateTeaserImage} from "./WidgetHelper";
 import {BasicWidgetConfig} from "../components/widgets/common/BasicWidget/types";
@@ -145,7 +145,7 @@ export async function ImageHelper_processImage({
 }: {
     presetCode: string | null,
     imageObj: ImageBlock | MainImageReference,
-    widgetConfig: BasicWidgetConfig | GenericListWidgetConfig | AbstractWidgetConfig,
+    widgetConfig: BasicWidgetConfig | GenericListWidgetConfig | StoryMainImageWidgetConfig,
     context: AppContext,
     imageSizes: {
         width: number,
