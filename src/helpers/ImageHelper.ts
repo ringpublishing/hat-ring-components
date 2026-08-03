@@ -11,7 +11,29 @@ import {WidgetHelper_getAppropriateTeaserCode, WidgetHelper_getAppropriateTeaser
 import {BasicWidgetConfig} from "../components/widgets/common/BasicWidget/types";
 import {GenericListWidgetConfig} from "../components/widgets/Lists/GenericList/types";
 
-export async function ImageHelper_getDefaultImageData(context, width, height, transform = TransformType.ResizeCropAuto, format: ImageFormat[] = ['png']) {
+type ImagePresetReference = {
+    url: string;
+    role: {
+        code: string;
+    };
+};
+
+type LeadReference = {
+    role?: {
+        code?: string;
+    };
+    image?: {
+        url?: string;
+    };
+};
+
+type ProcessedImage = {
+    url: string | undefined;
+    width: number;
+    height: number;
+};
+
+export async function ImageHelper_getDefaultImageData(context: AppContext, width: number, height: number, transform: TransformType = TransformType.ResizeCropAuto, format: ImageFormat[] = ['png']): Promise<ReturnType<typeof RingImageObject> | null> {
 
     const generalSettings = await ConfigHelper_getGeneralConfig(context);
 
@@ -33,29 +55,16 @@ export async function ImageHelper_getDefaultImageData(context, width, height, tr
  * @param defaultSizesString
  * @return {width: SafeNumber, height: SafeNumber}
  */
-export function ImageHelper_getImageDimensionsFromObject(object, context: AppContext, desktopFieldName = 'standardImageSize', mobileFieldName = 'imageSizeMobile', defaultSizesString = '800x450'): {
+export function ImageHelper_getImageDimensionsFromObject(object: Record<string, any> | null | undefined, context: AppContext, desktopFieldName = 'standardImageSize', mobileFieldName = 'imageSizeMobile', defaultSizesString = '800x450'): {
     width: number,
     height: number
 } {
     if (!object) return {width: 0, height: 0};
-    let dimensionsString: string = '';
-    if (UtilsHelper_isMobile(context)) {
-        if (object[mobileFieldName]) {
-            dimensionsString = object[mobileFieldName];
-        } else {
-            if (object[desktopFieldName]) {
-                dimensionsString = object[desktopFieldName];
-            }
-        }
-    } else {
-        if (object[desktopFieldName]) {
-            dimensionsString = object[desktopFieldName];
-        }
-    }
-
-    if (dimensionsString === '') {
-        dimensionsString = defaultSizesString;
-    }
+    const isMobile = UtilsHelper_isMobile(context);
+    const dimensionsString: string =
+        (isMobile && object[mobileFieldName]) ||
+        object[desktopFieldName] ||
+        defaultSizesString;
     const sizes = dimensionsString.split('x');
     return {width: parseInt(sizes[0]), height: parseInt(sizes[1])};
 }
@@ -113,16 +122,11 @@ export function ImageHelper_getImageMetaData(image: ImageBlock | MainImageRefere
     };
 }
 
-export function ImageHelper_getImagePreset(image: ImageBlock | MainImageReference, presetCode: string | null) {
+export function ImageHelper_getImagePreset(image: ImageBlock | MainImageReference, presetCode: string | null): string | null {
     if (presetCode) {
-        const allPresets = _.get(image, 'image.presets', []);
+        const allPresets: ImagePresetReference[] = _.get(image, 'image.presets', []);
 
-        const selectedPreset = allPresets.find((p: {
-            url: string
-            role: {
-                code: string
-            }
-        }) => p.role.code === presetCode);
+        const selectedPreset = allPresets.find((p: ImagePresetReference) => p.role.code === presetCode);
 
         if (selectedPreset) {
             return selectedPreset.url;
@@ -153,9 +157,9 @@ export async function ImageHelper_processImage({
     },
     originalImageWidth: number,
     originalImageHeight: number,
-    leads?: any[],
+    leads?: LeadReference[],
     isBig?: boolean
-}) {
+}): Promise<ProcessedImage> {
     const croppedSrc = _.get(imageObj, 'url');
     const originalSrc = _.get(imageObj, 'image.url');
     const imageResizeCropMode = _.get(widgetConfig, 'imageResizeCropMode', 'cover');
