@@ -6,7 +6,11 @@ import {RingImageObject} from "../renderlessComponents/common/RingImageObject";
 import {ImageFormat} from "@ringpublishing/accelerator-images";
 import _ from "lodash";
 import {StoryMainImageResponse, StoryMainImageWidgetConfig} from "../components/widgets/Story/StoryMainImage/types";
-import {ImageBlock, MainImageReference} from "@ringpublishing/graphql-api-client-got/dist/types/websites-api";
+import {
+    ImageBlock,
+    ImageCrop,
+    MainImageReference
+} from "@ringpublishing/graphql-api-client-got/dist/types/websites-api";
 import {WidgetHelper_getAppropriateTeaserCode, WidgetHelper_getAppropriateTeaserImage} from "./WidgetHelper";
 import {BasicWidgetConfig} from "../components/widgets/common/BasicWidget/types";
 import {GenericListWidgetConfig} from "../components/widgets/Lists/GenericList/types";
@@ -162,23 +166,27 @@ export async function ImageHelper_processImage({
 }): Promise<ProcessedImage> {
     const croppedSrc = _.get(imageObj, 'url');
     const originalSrc = _.get(imageObj, 'image.url');
+    const crop = _.get(imageObj, `image.crop`) as ImageCrop | undefined;
+    const isCropped = !!crop;
     const imageResizeCropMode = _.get(widgetConfig, 'imageResizeCropMode', 'cover');
     const maxImageWidth = UtilsHelper_convertToInt(imageSizes.width);
     const maxImageHeight = UtilsHelper_convertToInt(imageSizes.height);
-    let imageWidth = originalImageWidth;
-    let imageHeight = originalImageHeight;
+    let imageWidth = isCropped ? crop?.width : originalImageWidth;
+    let imageHeight = isCropped ? crop?.height : originalImageHeight;
     let imgSrc = croppedSrc;
 
     if (widgetConfig?.useOriginalImage) {
         imgSrc = originalSrc;
     } else {
-        const presetUrl = ImageHelper_getImagePreset(imageObj, presetCode);
-        if (presetUrl) {
-            imgSrc = presetUrl;
-        } else {
-            const customTeaserImageUrl = await WidgetHelper_getAppropriateTeaserImage(widgetConfig, context, leads, isBig);
-            if (customTeaserImageUrl) {
-                imgSrc = customTeaserImageUrl;
+        if (!isCropped) {
+            const presetUrl = ImageHelper_getImagePreset(imageObj, presetCode);
+            if (presetUrl) {
+                imgSrc = presetUrl;
+            } else {
+                const customTeaserImageUrl = await WidgetHelper_getAppropriateTeaserImage(widgetConfig, context, leads, isBig);
+                if (customTeaserImageUrl) {
+                    imgSrc = customTeaserImageUrl;
+                }
             }
         }
     }
