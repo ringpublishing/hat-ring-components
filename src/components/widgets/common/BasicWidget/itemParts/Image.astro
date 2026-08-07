@@ -58,7 +58,7 @@ let toRender: boolean | string | JSX.Element = false;
 
 const image = data.image || data.originalContent?.image;
 
-if (process.env.DISABLE_RECOMMENDATION_PRESETS_OVERRIDE && data.system === 'RECOMMENDATION') {
+if (!process.env.DISABLE_RECOMMENDATION_PRESETS_OVERRIDE && data.system === 'RECOMMENDATION') {
     image.presets = [];
 }
 
