@@ -1,13 +1,10 @@
 ---
 import _ from "lodash";
 const {itemIndex, context, widgetConfig, data,} = Astro.props;
-import React, {ReactElement} from 'react';
-import {AppContext} from "../../../../../types/types";
 import {BasicWidgetConfig, BasicWidgetResponseNode} from "../types";
 import {default as RingImage} from "../../../../common/RingImage.astro";
 import {
     WidgetHelper_getAppropriateTeaserCode,
-    WidgetHelper_getAppropriateTeaserImage,
     WidgetHelper_renderEmptyComponent,
 } from "../../../../../helpers/WidgetHelper";
 import gql from "graphql-tag";
@@ -16,11 +13,11 @@ import {
 } from "../../../../../helpers/ImageHelper";
 import {TransformType} from "../../../../../helpers/AcceleratorImagesHelper";
 import {UtilsHelper_convertToInt, UtilsHelper_isMobile} from "../../../../../helpers/UtilsHelper";
-import {MainImageReference} from "@ringpublishing/graphql-api-client-got/dist/types/websites-api";
 
 export const getFragment = () => {
     return {
         query: gql`fragment BasicWidgetImageSectionFragment on SectionItem {
+            system
             image {
                 url
                 caption
@@ -60,6 +57,10 @@ export const getFragment = () => {
 let toRender: boolean | string | JSX.Element = false;
 
 const image = data.image || data.originalContent?.image;
+
+if (process.env.DISABLE_RECOMMENDATION_PRESETS_OVERRIDE && data.system === 'RECOMMENDATION') {
+    image.presets = [];
+}
 
 if (!image || !image.url) {
     toRender = WidgetHelper_renderEmptyComponent('Image');

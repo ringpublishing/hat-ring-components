@@ -166,7 +166,7 @@ export async function ImageHelper_processImage({
 }): Promise<ProcessedImage> {
     const croppedSrc = _.get(imageObj, 'url');
     const originalSrc = _.get(imageObj, 'image.url');
-    const crop = _.get(imageObj, `image.crop`) as ImageCrop | undefined;
+    const crop = _.get(imageObj, `crop`) as ImageCrop | undefined;
     const isCropped = !!crop;
     const imageResizeCropMode = _.get(widgetConfig, 'imageResizeCropMode', 'cover');
     const maxImageWidth = UtilsHelper_convertToInt(imageSizes.width);
