@@ -58,12 +58,14 @@ let toRender: boolean | string | JSX.Element = false;
 
 const image = data.image || data.originalContent?.image;
 
-if (!process.env.DISABLE_RECOMMENDATION_PRESETS_OVERRIDE && data.system === 'RECOMMENDATION') {
-    image.presets = [];
-}
-
 if (!image || !image.url) {
     toRender = WidgetHelper_renderEmptyComponent('Image');
+}
+
+if (!process.env.DISABLE_RECOMMENDATION_PRESETS_OVERRIDE && data.system === 'RECOMMENDATION') {
+    if (image?.image?.presets) {
+        image.image.presets = [];
+    }
 }
 
 const isBig = widgetConfig.countBig ? itemIndex < widgetConfig.countBig : false;
