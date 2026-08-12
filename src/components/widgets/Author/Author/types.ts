@@ -1,4 +1,4 @@
-import {Author, AuthorEdge} from "@ringpublishing/graphql-api-client-got/lib/types/websites-api";
+import {Author, AuthorEdge} from "@ringpublishing/graphql-api-client-got/dist/types/websites-api";
 import {StoryAuthorsParams, StoryAuthorsWidgetConfig} from "../../Story/StoryAuthors/types";
 import {WidgetParams} from "../../../../types/types";
 

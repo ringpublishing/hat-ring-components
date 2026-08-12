@@ -1,1 +1,1 @@
-schema: "node_modules/@ringpublishing/graphql-api-client-got/lib/schemas/websites-api.graphql"
+schema: "node_modules/@ringpublishing/graphql-api-client-got/dist/schemas/websites-api.gql"

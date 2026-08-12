@@ -1,5 +1,5 @@
 import {AbstractWidgetConfig, AppContext, ComponentParams, WidgetParams} from "../../../../types/types";
-import {Topic} from "@ringpublishing/graphql-api-client-got/lib/types/websites-api";
+import {Topic} from "@ringpublishing/graphql-api-client-got/dist/types/websites-api";
 
 export interface StoryTaxonomyListWidgetConfig extends AbstractWidgetConfig {
     taxonomyKind: string,

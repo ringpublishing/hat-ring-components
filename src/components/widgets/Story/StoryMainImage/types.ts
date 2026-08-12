@@ -23,6 +23,7 @@ export interface  StoryMainImageWidgetConfig extends AbstractWidgetConfig {
     response?: StoryMainImageResponse,
     standardImageSize?: string,
     imageSizeMobile?: string,
+    useOriginalImage?: boolean,
     cacheTTL?: number,
     imageResizeCropMode?: "cover" | "contain",
 }

@@ -6,7 +6,7 @@ import {StoryHelper_getLeadBlock} from "../StoryHelper";
 import {WebsiteApiProvider} from "../../providers/WebsiteApiProvider";
 
 // Libraries
-import {Story} from "@ringpublishing/graphql-api-client-got/lib/types/websites-api";
+import {Story} from "@ringpublishing/graphql-api-client-got/dist/types/websites-api";
 import {gql} from "graphql-tag";
 import _ from "lodash";
 import {SeoHelper_getSeoCurrentPageType} from "./SeoHelper";

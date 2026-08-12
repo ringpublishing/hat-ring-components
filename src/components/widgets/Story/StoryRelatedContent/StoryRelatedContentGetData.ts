@@ -5,7 +5,7 @@ import {AppContext} from "../../../../types/types";
 import _ from "lodash";
 import {StoryRelatedContentAutocompleteFromEnum, StoryRelatedContentWidgetConfig} from "./types";
 import {GenericListResponse} from "../../Lists/GenericList/types";
-import {Story, StoryEdge} from "@ringpublishing/graphql-api-client-got/lib/types/websites-api";
+import {Story, StoryEdge} from "@ringpublishing/graphql-api-client-got/dist/types/websites-api";
 import {UtilsHelper_convertToInt, UtilsHelper_getCurrentNodeCategoryId} from "../../../../helpers/UtilsHelper";
 import {ConfigHelper_getMainCategoryUuid} from "../../../../helpers/ConfigHelper";
 import {CacheHelper_createParentChildRelation} from "../../../../helpers/CacheHelper";

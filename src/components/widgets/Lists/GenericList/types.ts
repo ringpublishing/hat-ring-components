@@ -5,7 +5,7 @@ import {
     Story,
     StoryEdge,
     Topic
-} from "@ringpublishing/graphql-api-client-got/lib/types/websites-api";
+} from "@ringpublishing/graphql-api-client-got/dist/types/websites-api";
 
 export enum GenericListGeneralShowOptions {
     Items = "items",
@@ -45,6 +45,7 @@ export interface GenericListWidgetConfig extends AbstractWidgetConfig {
     }>,
     "linkLabel": string,
     "mainSeoList": boolean,
+    "useOriginalImage"?: boolean,
     customTeasers?: Array<{
         'Teaser code name'?: string,
         'For mobile'?: 'on',

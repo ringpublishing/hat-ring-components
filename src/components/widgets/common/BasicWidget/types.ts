@@ -53,6 +53,7 @@ export interface BasicWidgetConfig extends AbstractWidgetConfig {
     titleAddonsCodeNames?: string,
     alternativeTeasersCodeNames?: string,
     classificationList?: string,
+    useOriginalImage?: boolean,
     additionalOptions?: Array<BasicWidgetAdditionalOptions>
     linkLabel?: string,
     customTeasers?: Array<{
