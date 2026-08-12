@@ -178,7 +178,8 @@ export class WebsiteApiProvider {
 
             MonitoringProvider.counter(`info.WebsitesApiProvider.call.apiCall_${queryType}`);
 
-            const response = await global.websitesApiGotClient.query(query, variables);
+            const rawRequest = await global.websitesApiGotClient.query(query, variables);
+            const response = rawRequest.body;
 
             if (response.errors || response.error) {
                 const errorMsg = response.errors?.[0]?.message || response.error?.message || 'Unknown API error';
