@@ -171,8 +171,8 @@ export async function ImageHelper_processImage({
     const imageResizeCropMode = _.get(widgetConfig, 'imageResizeCropMode', 'cover');
     const maxImageWidth = UtilsHelper_convertToInt(imageSizes.width);
     const maxImageHeight = UtilsHelper_convertToInt(imageSizes.height);
-    let imageWidth = isCropped ? crop?.width : originalImageWidth;
-    let imageHeight = isCropped ? crop?.height : originalImageHeight;
+    let imageWidth = isCropped && !widgetConfig?.useOriginalImage ? crop?.width : originalImageWidth;
+    let imageHeight = isCropped && !widgetConfig?.useOriginalImage ? crop?.height : originalImageHeight;
     let imgSrc = croppedSrc;
 
     if (widgetConfig?.useOriginalImage) {
