@@ -481,6 +481,40 @@ export class RedisProvider {
         await this.client.del(`tag:${tag}`);
     }
 
+    // DEL each key and SREM the same list from the tag in one transaction, so a key
+    // added to the tag after the snapshot taken here is never touched by either.
+    async purgeTagMembers(tag: string): Promise<number> {
+        if (!this.client) {
+            await this.initialize();
+        }
+
+        // Raw snapshot, not getKeysByTag: that helper's lazy-cleanup SREM for dead
+        // members is fire-and-forget, so a key recreated between its EXISTS check and
+        // that SREM would be excluded here yet still have its fresh registration wiped
+        // by it - an orphan through a path this transaction never sees. A plain SMEMBERS
+        // has no such side effect; a dead member in it just makes its DEL a harmless 0.
+        const keys = await this.client.sMembers(`tag:${tag}`);
+        if (!keys || keys.length === 0) {
+            return 0;
+        }
+
+        const multi = this.client.multi();
+        for (const key of keys) {
+            multi.del(key);
+        }
+        multi.sRem(`tag:${tag}`, keys);
+        const replies = await multi.exec();
+
+        let deleted = 0;
+        for (let i = 0; i < keys.length; i++) {
+            const reply = replies[i];
+            if (typeof reply === 'number') {
+                deleted += reply;
+            }
+        }
+        return deleted;
+    }
+
 
     async addTag(tag, key) {
         await this.client.sAdd('tag:' + tag, key);
