@@ -114,14 +114,9 @@ export async function CacheHelper_getKeysByTag(tag: string) {
 
 
 export async function CacheHelper_clearByTag(tag: string): Promise<{ keys: number, responses: number } > {
-    const keys = await CacheHelper_getKeysByTag(tag);
-
     const deleteCount = {
         keys: 0,
         responses: 0,
-    }
-    if (!keys || keys.length === 0) {
-        return deleteCount;
     }
 
     if (!cacheAdapter.purgeTagMembers) {
@@ -129,8 +124,10 @@ export async function CacheHelper_clearByTag(tag: string): Promise<{ keys: numbe
         return deleteCount;
     }
 
+    // Not routed through CacheHelper_getKeysByTag: its lazy-cleanup SREM for dead
+    // members is fire-and-forget, so purgeTagMembers takes its own raw snapshot instead.
     try {
-        deleteCount.keys = await cacheAdapter.purgeTagMembers(tag, keys);
+        deleteCount.keys = await cacheAdapter.purgeTagMembers(tag);
     } catch (e) {
         LogHelper_error('CacheHelper_clearByTag.failed', {
             tag,

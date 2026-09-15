@@ -77,8 +77,8 @@ export class RedisCacheAdapter implements CacheAdapterInterface {
         return await this.redisProvider.removeTag(tag);
     }
 
-    async purgeTagMembers(tag: string, keys: string[]): Promise<number> {
-        return await this.redisProvider.purgeTagMembers(tag, keys);
+    async purgeTagMembers(tag: string): Promise<number> {
+        return await this.redisProvider.purgeTagMembers(tag);
     }
 
     async unlink(key: string): Promise<void> {
