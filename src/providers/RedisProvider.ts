@@ -481,6 +481,33 @@ export class RedisProvider {
         await this.client.del(`tag:${tag}`);
     }
 
+    // DEL each key and SREM the same list from the tag in one transaction, so a key
+    // added to the tag after the snapshot passed in is never touched by either.
+    async purgeTagMembers(tag: string, keys: string[]): Promise<number> {
+        if (!this.client) {
+            await this.initialize();
+        }
+        if (!keys || keys.length === 0) {
+            return 0;
+        }
+
+        const multi = this.client.multi();
+        for (const key of keys) {
+            multi.del(key);
+        }
+        multi.sRem(`tag:${tag}`, keys);
+        const replies = await multi.exec();
+
+        let deleted = 0;
+        for (let i = 0; i < keys.length; i++) {
+            const reply = replies[i];
+            if (typeof reply === 'number') {
+                deleted += reply;
+            }
+        }
+        return deleted;
+    }
+
 
     async addTag(tag, key) {
         await this.client.sAdd('tag:' + tag, key);

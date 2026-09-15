@@ -116,33 +116,28 @@ export async function CacheHelper_getKeysByTag(tag: string) {
 export async function CacheHelper_clearByTag(tag: string): Promise<{ keys: number, responses: number } > {
     const keys = await CacheHelper_getKeysByTag(tag);
 
-
     const deleteCount = {
         keys: 0,
         responses: 0,
     }
-    if (!keys) {
+    if (!keys || keys.length === 0) {
         return deleteCount;
     }
 
-    const results = await Promise.allSettled(keys.map((key) => cacheAdapter.del!(key)));
-    for (const [index, result] of results.entries()) {
-        if (result.status === 'rejected') {
-            const reason = result.reason;
-            LogHelper_error('CacheHelper_clearByTag.del_failed', {
-                tag,
-                key: keys[index],
-                errorMessage: reason instanceof Error ? reason.message : String(reason),
-                errorStack: reason instanceof Error ? reason.stack : undefined,
-            });
-            MonitoringProvider.counter('error.CacheHelper_clearByTag.del_failed');
-        } else {
-            deleteCount.keys += result.value ?? 0;
-        }
+    if (!cacheAdapter.purgeTagMembers) {
+        LogHelper_error('CacheAdapter does not support purgeTagMembers');
+        return deleteCount;
     }
 
-    if(cacheAdapter.removeTag) {
-        await cacheAdapter.removeTag(tag);
+    try {
+        deleteCount.keys = await cacheAdapter.purgeTagMembers(tag, keys);
+    } catch (e) {
+        LogHelper_error('CacheHelper_clearByTag.failed', {
+            tag,
+            errorMessage: e instanceof Error ? e.message : String(e),
+            errorStack: e instanceof Error ? e.stack : undefined,
+        });
+        MonitoringProvider.counter('error.CacheHelper_clearByTag.failed');
     }
 
     return deleteCount;
