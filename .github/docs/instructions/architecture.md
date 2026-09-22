@@ -503,8 +503,8 @@ CacheProvider.getTTL(key)                      // Get remaining TTL
 - Glob pattern scanning for key discovery
 
 Tag lifecycle invariants (RedisProvider):
-- A data key is written with `SET … EX (ttl + CACHE_KEY_EXPIRE_GRACE_SECONDS)` **and** `SADD tag:<tag> <key>` in one `MULTI`, so a key never exists without its tag membership and Redis reclaims it on its own. The grace is the stale-while-revalidate window: after it a logically expired key is a hard miss.
-- Tag sets are only ever lengthened, never shortened (a Lua `TTL`-check + `EXPIRE`, so no Redis 7 `GT` dependency): their `EXPIRE` is ≥ the physical lifetime of their longest-lived member and ≥ `CACHE_TAG_TTL`/`CACHE_TTL` + grace. A misconfigured `CACHE_TAG_TTL` is ignored with an error log.
+- A data key is written **and** `SADD`-ed into its tag sets in one `MULTI`, so a key never exists without its tag membership.
+- **Expiry follows one of two modes, and a tag set always shares the lifecycle of its members.** Persistent mode (`CACHE_KEY_EXPIRE_GRACE_SECONDS=0`, the default and the original design): no key and no tag set carries a Redis TTL. The `ttl` / `expirationTimestamp` in the cached object say when the entry should be *refreshed*, never when it should be deleted; removal is left to maxmemory eviction and explicit invalidation, because a stale hit beats a miss. This requires an `allkeys-*` `maxmemory-policy`: under a `volatile-*` policy nothing would be evictable and writes would fail with OOM. Volatile mode (grace > 0): data keys get `SET … EX (ttl + grace)` and tag sets are only ever lengthened, never shortened (a Lua `TTL`-check + `EXPIRE`, so no Redis 7 `GT` dependency), staying ≥ the physical lifetime of their longest-lived member and ≥ `CACHE_TAG_TTL`/`CACHE_TTL` + grace. A misconfigured `CACHE_TAG_TTL` is ignored with an error log.
 - Every read (throttled per tag+key by `CACHE_TAG_REFRESH_INTERVAL`) re-asserts membership with `SADD`, lengthens the tag set if needed, and backfills an `EXPIRE` on legacy keys written without one. A key that lost its tag (evicted tag set, purge race, partial write) therefore heals on the next read.
 - `clearByTag` runs `DEL <members>` + `SREM tag <members>` per batch in one `MULTI` and never deletes the tag set: members added concurrently survive the purge. `parent_<uuid>` markers survive too and are removed one by one by the webhook after the parent was purged; `child_<uuid>` markers are dropped and re-created on the parent's next render.
 - `getKeysByTag` EXISTS-filters only real keys; relation markers are returned untouched. Dead members are removed atomically (`EXISTS` + `SREM` in one Lua call).
@@ -789,8 +789,8 @@ HAT uses multiple cache layers, from fastest to slowest:
 | `CACHE_CLEAN_INTERVAL` | `60` | Interval (seconds) for the periodic NodeCache flush. Ignored with Redis. |
 | `CACHE_TTL_DEGRADED_RESPONSE` | `60` | TTL for GraphQL responses with `errors`. |
 | `CACHE_TTL_NOT_FOUND_RESPONSE` | `300` | TTL for GraphQL responses without any entity (`{story: null}`). |
-| `CACHE_KEY_EXPIRE_GRACE_SECONDS` | `3600` | Redis: extra physical lifetime of a data key after its logical TTL. |
-| `CACHE_TAG_TTL` | `CACHE_TTL` | Redis: base EXPIRE of tag sets (must be ≥ `CACHE_TTL`; grace is added). |
+| `CACHE_KEY_EXPIRE_GRACE_SECONDS` | `0` | Redis: `0` keeps every entry free of a Redis TTL (eviction only); > 0 opts into `EX (ttl + grace)` on data keys. |
+| `CACHE_TAG_TTL` | `CACHE_TTL` | Redis, volatile mode only: base EXPIRE of tag sets (must be ≥ `CACHE_TTL`; grace is added). |
 | `CACHE_TAG_REFRESH_INTERVAL` | `3600` | Redis: throttle for re-asserting tag membership on reads (≤ tag TTL / 2). |
 | `USE_REDIS` | `0` | `0` = NodeCache (in-memory), `1` = Redis. |
 | `MEM_CACHE_FOR_CONFIG_MODE` | `'request'` | Config cache mode: `'none'`, `'request'`, or `'time'`. |
