@@ -177,7 +177,9 @@ async function autocompleteByFirstStoryTag(context: AppContext, widgetConfig: St
         ${dynamicFragments}
     `;
     //console.log(query.loc?.source.body, JSON.stringify(variables));
-    const response = await WebsiteApiProvider.call(query, variables);
+    // The story id is only present inside excludedIds, which determineQueryTags does not recognise,
+    // so the tag is passed explicitly to let the republish webhook invalidate this list.
+    const response = await WebsiteApiProvider.call(query, variables, widgetConfig?.cacheTTL, [`story_${context.id}`]);
     const res = _.get(response, 'data.stories.edges', []);
 
     return res;

@@ -2,7 +2,7 @@ import {gql} from '@ringpublishing/graphql-api-client-got';
 import {WebsitesApiClient} from '@ringpublishing/graphql-api-client-got';
 import {DocumentNode} from "graphql/language/ast";
 import {
-    CacheHelper_set, CacheHelper_getDecoratedCachedObject, CacheHelper_isExpired
+    CacheHelper_set, CacheHelper_getDecoratedCachedObject, CacheHelper_isExpired, CacheHelper_normalizeTtl
 } from "../helpers/CacheHelper";
 import {MonitoringProvider} from "./MonitoringProvider";
 import {LogHelper_error, LogHelper_info} from "../helpers/LogHelper";
@@ -10,12 +10,26 @@ import {LogHelper_error, LogHelper_info} from "../helpers/LogHelper";
 if (!global.HATCacheInCallInProgress) global.HATCacheInCallInProgress = {};
 let gqlResetCachesTimestamp = new Date().getTime();
 const GQL_CACHE_RESET_INTERVAL_SECONDS = Number(process.env.GQL_CACHE_RESET_INTERVAL_SECONDS) || 300;
+// Responses that carry GraphQL errors are cached only briefly instead of for the full TTL
+const DEGRADED_RESPONSE_TTL_SECONDS = Number(process.env.CACHE_TTL_DEGRADED_RESPONSE) > 0
+    ? Number(process.env.CACHE_TTL_DEGRADED_RESPONSE)
+    : 60;
+// Responses without any entity (e.g. {data: {story: null}}) are a stable negative result (404, not yet visible):
+// cached longer than an error, but never for a 31-day TTL that would hide the entity once it appears
+const NOT_FOUND_RESPONSE_TTL_SECONDS = Number(process.env.CACHE_TTL_NOT_FOUND_RESPONSE) > 0
+    ? Number(process.env.CACHE_TTL_NOT_FOUND_RESPONSE)
+    : 300;
 
 export class WebsiteApiProvider {
-    static async call(query: DocumentNode, variables, cacheTtl: null | number = null): Promise<any> {
+    /**
+     * @param cacheTtl        logical TTL in seconds; null = CACHE_TTL default, 0 = do not cache
+     * @param additionalTags  extra cache tags for invalidation (e.g. `story_<uuid>` for a stories() query
+     *                        whose variables do not carry the story id in a recognised variable name)
+     */
+    static async call(query: DocumentNode, variables, cacheTtl: null | number = null, additionalTags: string[] = []): Promise<any> {
         const cacheKeyString = JSON.stringify({query: query.loc?.source.body, variables});
         const queryType = this._determineQueryType(query);
-        const tags = this.determineQueryTags(query, variables, queryType);
+        const tags = this._mergeTags(this.determineQueryTags(query, variables, queryType), additionalTags);
 
         try {
             const decoratedObject = await CacheHelper_getDecoratedCachedObject(cacheKeyString);
@@ -34,7 +48,7 @@ export class WebsiteApiProvider {
                     const refreshPromise = this._call(query, variables, 'no-cache', queryType)
                         .then((response) => {
                             if (response) {
-                                CacheHelper_set(cacheKeyString, response, cacheTtl, tags);
+                                CacheHelper_set(cacheKeyString, response, this._cacheTtlForResponse(response, cacheTtl), tags);
                             } else {
                                 MonitoringProvider.counter('error.WebsitesApiProvider.call.emptyResponse');
                             }
@@ -60,7 +74,7 @@ export class WebsiteApiProvider {
             const callPromise = this._call(query, variables, 'no-cache', queryType)
                 .then((response) => {
                     if (response) {
-                        CacheHelper_set(cacheKeyString, response, cacheTtl, tags);
+                        CacheHelper_set(cacheKeyString, response, this._cacheTtlForResponse(response, cacheTtl), tags);
                     } else {
                         MonitoringProvider.counter('error.WebsitesApiProvider.call.emptyResponse');
                     }
@@ -78,6 +92,64 @@ export class WebsiteApiProvider {
             LogHelper_error('WebsitesApiProvider.call error:', e);
             return null;
         }
+    }
+
+    static _mergeTags(determinedTags: string[], additionalTags: string[] | null | undefined): string[] {
+        const merged = new Set<string>(determinedTags || []);
+        for (const tag of additionalTags || []) {
+            if (typeof tag === 'string' && tag.length > 0) {
+                merged.add(tag);
+            }
+        }
+        return [...merged];
+    }
+
+    /** A response is "degraded" when it carries GraphQL errors (partial data or a malformed payload). */
+    static _isDegradedResponse(response: any): boolean {
+        if (!response || typeof response !== 'object') {
+            return true;
+        }
+        if (response.errors || response.error) {
+            return true;
+        }
+        const data = response.data;
+        return !data || typeof data !== 'object';
+    }
+
+    /** A response is "not found" when `data` holds no entity at all, e.g. `{data: {story: null}}`. */
+    static _isNotFoundResponse(response: any): boolean {
+        const data = response?.data;
+        if (!data || typeof data !== 'object') {
+            return false;
+        }
+        const values = Object.values(data);
+        return values.length === 0 || values.every((value) => value === null || value === undefined);
+    }
+
+    /**
+     * TTL to store a response with. Errors and empty results would otherwise be cached for the full TTL
+     * (31 days on long-TTL sites) and keep a page broken, or hide an entity, until the next republish.
+     * Because CacheHelper_isExpired only forces expiry when the stored TTL is LONGER than the requested one,
+     * an entry stored with this shorter TTL simply expires on time and is then refreshed.
+     */
+    static _cacheTtlForResponse(response: any, cacheTtl: null | number): null | number {
+        let shortTtl: number | null = null;
+        if (this._isDegradedResponse(response)) {
+            shortTtl = DEGRADED_RESPONSE_TTL_SECONDS;
+            MonitoringProvider.counter('info.WebsitesApiProvider.call.degradedResponse');
+        } else if (this._isNotFoundResponse(response)) {
+            shortTtl = NOT_FOUND_RESPONSE_TTL_SECONDS;
+            MonitoringProvider.counter('info.WebsitesApiProvider.call.notFoundResponse');
+        }
+        if (shortTtl === null) {
+            return cacheTtl;
+        }
+        const requestedTtl = CacheHelper_normalizeTtl(cacheTtl);
+        if (requestedTtl === 0) {
+            return 0;
+        }
+        MonitoringProvider.counter('info.WebsitesApiProvider.call.shortTtlResponseCached');
+        return requestedTtl !== null ? Math.min(requestedTtl, shortTtl) : shortTtl;
     }
 
     static _determineQueryType(query: DocumentNode): string {

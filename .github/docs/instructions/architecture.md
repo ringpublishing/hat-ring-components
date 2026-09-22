@@ -463,6 +463,9 @@ WebsiteApiProvider.call(query, variables, ttl)
 - Story queries → tagged `story_<uuid>`
 - Config queries → tagged `config_<variant>`
 - Section queries → tagged `section_<codeName>`
+- Anything else → pass tags explicitly: `WebsiteApiProvider.call(query, variables, cacheTtl, ['story_<uuid>'])`. Use this whenever the story id is not carried by a recognised variable (`storyId`, `id`, `uuid`, …), e.g. a `stories(filter: {id: {notIn: $excludedIds}})` query.
+
+Responses that carry GraphQL `errors` are cached for `CACHE_TTL_DEGRADED_RESPONSE` (default 60 s) and responses whose `data` holds no entity (`{story: null}`) for `CACHE_TTL_NOT_FOUND_RESPONSE` (default 300 s) instead of the caller's TTL. `CacheHelper_isExpired` treats only a *shortened* configured TTL as a change, so these shorter entries simply expire on time.
 
 ### 6.2 CacheProvider
 
@@ -499,6 +502,16 @@ CacheProvider.getTTL(key)                      // Get remaining TTL
 - Pub/Sub capable for cache coordination across instances
 - Glob pattern scanning for key discovery
 
+Tag lifecycle invariants (RedisProvider):
+- A data key is written with `SET … EX (ttl + CACHE_KEY_EXPIRE_GRACE_SECONDS)` **and** `SADD tag:<tag> <key>` in one `MULTI`, so a key never exists without its tag membership and Redis reclaims it on its own. The grace is the stale-while-revalidate window: after it a logically expired key is a hard miss.
+- Tag sets are only ever lengthened, never shortened (a Lua `TTL`-check + `EXPIRE`, so no Redis 7 `GT` dependency): their `EXPIRE` is ≥ the physical lifetime of their longest-lived member and ≥ `CACHE_TAG_TTL`/`CACHE_TTL` + grace. A misconfigured `CACHE_TAG_TTL` is ignored with an error log.
+- Every read (throttled per tag+key by `CACHE_TAG_REFRESH_INTERVAL`) re-asserts membership with `SADD`, lengthens the tag set if needed, and backfills an `EXPIRE` on legacy keys written without one. A key that lost its tag (evicted tag set, purge race, partial write) therefore heals on the next read.
+- `clearByTag` runs `DEL <members>` + `SREM tag <members>` per batch in one `MULTI` and never deletes the tag set: members added concurrently survive the purge. `parent_<uuid>` markers survive too and are removed one by one by the webhook after the parent was purged; `child_<uuid>` markers are dropped and re-created on the parent's next render.
+- `getKeysByTag` EXISTS-filters only real keys; relation markers are returned untouched. Dead members are removed atomically (`EXISTS` + `SREM` in one Lua call).
+- When Redis is unreachable the provider degrades to cache misses / no-ops (one shared initialisation attempt at a time, throttled error logs) instead of throwing on every call; purge methods (`clearByTag`) do throw so the webhook can log the failure and rely on its +70 s / +305 s repeats.
+
+Rollout note for existing Redis databases: keys written by older versions have no `EXPIRE`, and keys of untagged queries (e.g. the StoryRelatedContent autocomplete `stories()` query before it was tagged) cannot be purged by tag. They are backfilled/healed on their first read, but a one-off `FLUSHDB` of the cache database (or a scan-clear) at deploy time is the clean way to start from a consistent state.
+
 ### 6.3 CacheHelper
 
 Convenience wrapper around `CacheProvider` with additional utilities:
@@ -515,7 +528,7 @@ CacheHelper_clearByTag(tag)                    // Delete all keys with tag (Redi
 CacheHelper_getTtl(key)                        // Get TTL
 ```
 
-**Auto-cleanup:** A periodic timer (interval: `CACHE_CLEAN_INTERVAL`, default 60s) calls `CacheHelper_flush()` and clears in-progress refresh locks (`global.HATCacheInCallInProgress`).
+**Auto-cleanup (NodeCache only):** `CacheHelper_get` flushes the in-process NodeCache every `CACHE_CLEAN_INTERVAL` seconds (default 60) and clears in-progress refresh locks (`global.HATCacheInCallInProgress`), because NodeCache is created with `deleteOnExpire: false`. With `USE_REDIS=1` this is skipped: data keys carry their own `EXPIRE`, and a `FLUSHALL` would wipe the cache shared by all pods.
 
 ---
 
@@ -773,7 +786,12 @@ HAT uses multiple cache layers, from fastest to slowest:
 |----------|---------|---------|
 | `CACHE_TTL` | `60` | General cache TTL in seconds. `0` disables caching. |
 | `CACHE_TTL_CONFIG` | `60` | Config-specific cache TTL in seconds. |
-| `CACHE_CLEAN_INTERVAL` | `60` | Interval (seconds) for periodic cache flush. |
+| `CACHE_CLEAN_INTERVAL` | `60` | Interval (seconds) for the periodic NodeCache flush. Ignored with Redis. |
+| `CACHE_TTL_DEGRADED_RESPONSE` | `60` | TTL for GraphQL responses with `errors`. |
+| `CACHE_TTL_NOT_FOUND_RESPONSE` | `300` | TTL for GraphQL responses without any entity (`{story: null}`). |
+| `CACHE_KEY_EXPIRE_GRACE_SECONDS` | `3600` | Redis: extra physical lifetime of a data key after its logical TTL. |
+| `CACHE_TAG_TTL` | `CACHE_TTL` | Redis: base EXPIRE of tag sets (must be ≥ `CACHE_TTL`; grace is added). |
+| `CACHE_TAG_REFRESH_INTERVAL` | `3600` | Redis: throttle for re-asserting tag membership on reads (≤ tag TTL / 2). |
 | `USE_REDIS` | `0` | `0` = NodeCache (in-memory), `1` = Redis. |
 | `MEM_CACHE_FOR_CONFIG_MODE` | `'request'` | Config cache mode: `'none'`, `'request'`, or `'time'`. |
 | `MEM_CACHE_FOR_CONFIG_TTL_MS` | `1000` | TTL for global memory config cache (mode: `'time'`). |
