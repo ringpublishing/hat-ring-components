@@ -31,7 +31,7 @@ CacheHelper_createParentChildRelation()     // For hierarchical cache relations
 | Variable | Default | Description |
 |---|---|---|
 | `CACHE_TTL` | `60` | Default time-to-live in seconds |
-| `CACHE_CLEAN_INTERVAL` | `60` | Interval for expired-entry cleanup in seconds |
+| `CACHE_CLEAN_INTERVAL` | `60` | Interval for the full NodeCache flush in seconds (ignored with Redis) |
 | `USE_REDIS` | `0` | Set to `1` to use Redis instead of NodeCache |
 
 ---
