@@ -22,6 +22,8 @@ interface ScannerState {
 // Redis SCAN reports the end of a full keyspace traversal with cursor "0".
 // node-redis v5 returns the cursor as a string (v4 used a number), so the comparison is done on strings only.
 const SCAN_END_CURSOR = '0';
+// How many failed keys a per-batch delete_failed log line carries (the full list can be COUNT keys long).
+const FAILED_KEYS_SAMPLE_SIZE = 10;
 
 if (!global['_scanners']) {
     global['_scanners'] = new Map<string, ScannerState>();
@@ -101,6 +103,8 @@ async function scanKeys(
     processKeys:  (keys: string[])  => Promise<void>,
 ) {
     if (CacheScannerHelper_getStatus(match) === 'running') {
+        // Same pattern already being scanned on this pod (e.g. admin UI search + webhook clear at the same time).
+        // Used to be skipped silently, which made "nothing happened" indistinguishable from a real run.
         LogHelper_info('CacheScannerHelper scan skipped, already running on this pod', match);
         MonitoringProvider.counter('info.CacheScannerHelper.scan_skipped_already_running');
         return;
@@ -209,9 +213,13 @@ export async function CacheScannerHelper_clearKeysByScan(cacheAdapter, startCurs
         );
         let failedInBatch = 0;
         let firstFailure: {key: string; errorMessage: string} | null = null;
+        const failedKeysSample: string[] = [];
         for (const [index, result] of results.entries()) {
             if (result.status === 'rejected') {
                 failedInBatch += 1;
+                if (failedKeysSample.length < FAILED_KEYS_SAMPLE_SIZE) {
+                    failedKeysSample.push(keys[index]);
+                }
                 if (!firstFailure) {
                     const reason = result.reason;
                     firstFailure = {key: keys[index], errorMessage: reason instanceof Error ? reason.message : String(reason)};
@@ -229,6 +237,7 @@ export async function CacheScannerHelper_clearKeysByScan(cacheAdapter, startCurs
                 batchSize: keys.length,
                 firstFailedKey: firstFailure?.key,
                 firstErrorMessage: firstFailure?.errorMessage,
+                failedKeysSample,
             });
         }
     });

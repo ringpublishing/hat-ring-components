@@ -16,6 +16,8 @@ export interface CacheAdapterInterface {
     getKeysByTag?(tag: string): Promise<string[]>;
     /** Deletes all data keys registered under the tag atomically per batch, keeps the tag set itself. */
     clearByTag?(tag: string): Promise<{deleted: number, members: number}>;
+    /** Alias of clearByTag returning only the number of deleted keys (name introduced by PR #117). */
+    purgeTagMembers?(tag: string): Promise<number>;
     removeTag?(tag: string): Promise<void>;
     /** Removes a single member (data key or relation marker) from a tag set. */
     removeKeyFromTag?(tag: string, key: string): Promise<void>;

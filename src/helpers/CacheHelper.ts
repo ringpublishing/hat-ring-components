@@ -145,36 +145,54 @@ export async function CacheHelper_clearByTag(tag: string): Promise<{ keys: numbe
 
     // Preferred path (Redis): DEL + SREM of the snapshotted members in one transaction, tag set is kept,
     // so concurrently written keys and parent/child relation markers are never dropped from the tag.
+    // Errors are counted here and re-thrown: the caller (webhook event loop, admin endpoint) decides how to
+    // degrade, and must not report a purge that did not happen as a success.
     if (cacheAdapter.clearByTag) {
-        const result = await cacheAdapter.clearByTag(tag);
-        deleteCount.keys = result.deleted;
-        return deleteCount;
+        try {
+            const result = await cacheAdapter.clearByTag(tag);
+            deleteCount.keys = result.deleted;
+            return deleteCount;
+        } catch (e) {
+            LogHelper_error('CacheHelper_clearByTag.failed', {
+                tag,
+                errorMessage: e instanceof Error ? e.message : String(e),
+                errorStack: e instanceof Error ? e.stack : undefined,
+            });
+            MonitoringProvider.counter('error.CacheHelper_clearByTag.failed');
+            throw e;
+        }
     }
 
-    // Fallback for adapters without an atomic clearByTag
+    // Fallback for adapters without an atomic clearByTag. Same contract as the Redis path: only the members
+    // seen in the snapshot are deleted and removed from the tag, the tag set itself is never dropped (a
+    // DEL of the whole set would orphan every key registered under the tag while this purge was running).
     const keys = await CacheHelper_getKeysByTag(tag);
     if (!keys) {
         return deleteCount;
     }
+    const dataKeys = keys.filter((key) => typeof key === 'string' && !key.startsWith('parent_') && !key.startsWith('child_'));
 
-    const results = await Promise.allSettled(keys.map((key) => cacheAdapter.del!(key)));
+    const results = await Promise.allSettled(dataKeys.map((key) => cacheAdapter.del!(key)));
+    const deletedKeys: string[] = [];
     for (const [index, result] of results.entries()) {
         if (result.status === 'rejected') {
             const reason = result.reason;
             LogHelper_error('CacheHelper_clearByTag.del_failed', {
                 tag,
-                key: keys[index],
+                key: dataKeys[index],
                 errorMessage: reason instanceof Error ? reason.message : String(reason),
                 errorStack: reason instanceof Error ? reason.stack : undefined,
             });
             MonitoringProvider.counter('error.CacheHelper_clearByTag.del_failed');
         } else {
             deleteCount.keys += result.value ?? 0;
+            deletedKeys.push(dataKeys[index]);
         }
     }
 
-    if(cacheAdapter.removeTag) {
-        await cacheAdapter.removeTag(tag);
+    // Only members that were actually deleted leave the tag; a failed DEL stays registered for the next purge.
+    if (cacheAdapter.removeKeyFromTag) {
+        await Promise.allSettled(deletedKeys.map((key) => cacheAdapter.removeKeyFromTag!(tag, key)));
     }
 
     return deleteCount;
