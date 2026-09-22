@@ -26,9 +26,7 @@
 | CACHE_TTL_DEGRADED_RESPONSE | No | 60 | TTL for GraphQL responses with `errors` (never cached for the full TTL) |
 | CACHE_TTL_NOT_FOUND_RESPONSE | No | 300 | TTL for GraphQL responses without any entity, e.g. `{story: null}` |
 | CACHE_CLEAN_INTERVAL | No | 60 | Full flush interval of the in-process NodeCache (seconds). Ignored with Redis, which reclaims expired keys itself |
-| CACHE_KEY_EXPIRE_GRACE_SECONDS | No | 0 | Redis only. `0` = persistent mode: nothing in the cache database carries a Redis TTL, entries are reclaimed only by maxmemory eviction (requires an `allkeys-*` policy). A positive value opts into volatile mode: data keys get `EX (ttl + grace)` and the grace is the stale-while-revalidate window |
-| CACHE_TAG_TTL | No | CACHE_TTL | Redis, volatile mode only: base EXPIRE of tag sets. Must be >= CACHE_TTL; empty, invalid or lower values are logged and replaced by CACHE_TTL. Grace is added on top. Ignored in persistent mode, where tag sets never expire |
-| CACHE_TAG_REFRESH_INTERVAL | No | 3600 | Redis only: throttle (seconds, per tag+key) for re-asserting tag membership on reads. Clamped to half of the tag TTL. On long-TTL sites (CACHE_TTL of days) under memory pressure use a few minutes, so an evicted tag set is rebuilt quickly; watch the `info.RedisProvider.clearByTag.emptyTagSet` counter |
+| CACHE_TAG_REFRESH_INTERVAL | No | 3600 | Redis only: throttle (seconds, per tag+key) for re-asserting tag membership on reads. Cache keys and tag sets never carry a Redis TTL (memory is reclaimed by `allkeys-*` eviction), so this only bounds how fast a key re-registers itself after its tag set was evicted; watch `info.RedisProvider.clearByTag.emptyTagSet`. `CACHE_TAG_TTL` is ignored |
 | USE_REDIS | No | 0 | 0=NodeCache, 1=Redis |
 | MEM_CACHE_FOR_CONFIG_MODE | No | 'request' | Config caching mode: 'request', 'time', 'none' |
 | MEM_CACHE_FOR_CONFIG_TTL_MS | No | 1000 | TTL for time-based config cache (ms) |

@@ -201,7 +201,7 @@ export async function CacheHelper_clearByTag(tag: string): Promise<{ keys: numbe
 /**
  * Periodic full flush of the in-process NodeCache, which is created with deleteOnExpire:false and
  * checkperiod:0 and therefore never reclaims expired entries on its own.
- * Never runs against Redis: data keys carry their own EXPIRE there, and a FLUSHALL would wipe the cache
+ * Never runs against Redis: memory there is reclaimed by maxmemory eviction, and a FLUSHALL would wipe the cache
  * shared by every pod (blocking the Redis server while doing so).
  */
 function handleCleanCache() {
