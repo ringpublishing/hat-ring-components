@@ -199,6 +199,9 @@ export function StoryHelper_getGqlContentFragment(): any {
                     ... on ParagraphBlock {
                         type
                         text
+                        role {
+                            code
+                        }
                     }
                     ... on HeadingBlock {
                         type

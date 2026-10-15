@@ -11,6 +11,9 @@ export interface ParagraphBlockParams {
   blockData: {
     type: string;
     text: string;
+    role?: {
+      code?: string;
+    } | null;
   };
   extendableAttributes?: StoryContentExtendableAttributes;
 }
@@ -38,7 +41,7 @@ blockData.text = await SeoLinkWhitelistHelper_processLinks(context, blockData.te
     <Fragment set:html={toRender} />
   ) : (
     <div class="ParagraphBlock">
-      <p set:html={blockData.text} />
+      <p data-role={blockData.role?.code} set:html={blockData.text} />
     </div>
   )
 }
