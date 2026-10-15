@@ -10,9 +10,16 @@ export interface CacheAdapterInterface {
     flushAll(): Promise<any>;
     keys(): Promise<string[]>;
     keysByGlob?(globKey: string): Promise<string[]>;
-    scan?(cursor:number, match: string, count?:number): Promise<{keys: Array<any>, cursor: number}>;
+    /** SCAN cursor is a string ('0' = end of iteration); numbers are accepted for backwards compatibility. */
+    scan?(cursor: number | string, match: string, count?: number): Promise<{keys: string[], cursor: string}>;
     mget(keys: string[]): Promise<{ [p: string]: unknown }>;
     getKeysByTag?(tag: string): Promise<string[]>;
+    /** Deletes all data keys registered under the tag atomically per batch, keeps the tag set itself. */
+    clearByTag?(tag: string): Promise<{deleted: number, members: number}>;
+    /** Alias of clearByTag returning only the number of deleted keys (name introduced by PR #117). */
+    purgeTagMembers?(tag: string): Promise<number>;
     removeTag?(tag: string): Promise<void>;
+    /** Removes a single member (data key or relation marker) from a tag set. */
+    removeKeyFromTag?(tag: string, key: string): Promise<void>;
     addTag?(tag: string, key:string): Promise<void>;
 }

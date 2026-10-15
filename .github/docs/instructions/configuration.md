@@ -23,7 +23,10 @@
 |----------|----------|---------|-------------|
 | CACHE_TTL | No | 60 | Widget cache TTL (seconds), 0 disables |
 | CACHE_TTL_CONFIG | No | 60 | Config cache TTL (seconds) |
-| CACHE_CLEAN_INTERVAL | No | 60 | Cache cleanup interval (seconds) |
+| CACHE_TTL_DEGRADED_RESPONSE | No | 60 | TTL for GraphQL responses with `errors` (never cached for the full TTL) |
+| CACHE_TTL_NOT_FOUND_RESPONSE | No | 300 | TTL for GraphQL responses without any entity, e.g. `{story: null}` |
+| CACHE_CLEAN_INTERVAL | No | 60 | Full flush interval of the in-process NodeCache (seconds). Ignored with Redis, which reclaims expired keys itself |
+| CACHE_TAG_REFRESH_INTERVAL | No | 3600 | Redis only: throttle (seconds, per tag+key) for re-asserting tag membership on reads. Cache keys and tag sets never carry a Redis TTL (memory is reclaimed by `allkeys-*` eviction), so this only bounds how fast a key re-registers itself after its tag set was evicted; watch `info.RedisProvider.clearByTag.emptyTagSet`. `CACHE_TAG_TTL` is ignored |
 | USE_REDIS | No | 0 | 0=NodeCache, 1=Redis |
 | MEM_CACHE_FOR_CONFIG_MODE | No | 'request' | Config caching mode: 'request', 'time', 'none' |
 | MEM_CACHE_FOR_CONFIG_TTL_MS | No | 1000 | TTL for time-based config cache (ms) |

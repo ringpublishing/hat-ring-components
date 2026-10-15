@@ -61,12 +61,20 @@ export class RedisCacheAdapter implements CacheAdapterInterface {
         return await this.redisProvider.keysByGlob(globKey);
     }
 
-    async scan(cursor:number, match: string, count?:number) {
+    async scan(cursor: number | string, match: string, count?: number) {
         return await this.redisProvider.scan(cursor, match, count);
     }
 
     async getKeysByTag(tag: string): Promise<string[]> {
         return await this.redisProvider.getKeysByTag(tag);
+    }
+
+    async clearByTag(tag: string): Promise<{deleted: number, members: number}> {
+        return await this.redisProvider.clearByTag(tag);
+    }
+
+    async purgeTagMembers(tag: string): Promise<number> {
+        return (await this.redisProvider.clearByTag(tag)).deleted;
     }
 
     async addTag(tag: string, key: string): Promise<void> {
@@ -75,6 +83,10 @@ export class RedisCacheAdapter implements CacheAdapterInterface {
 
     async removeTag(tag: string): Promise<void> {
         return await this.redisProvider.removeTag(tag);
+    }
+
+    async removeKeyFromTag(tag: string, key: string): Promise<void> {
+        return await this.redisProvider.removeKeyFromTag(tag, key);
     }
 
     async unlink(key: string): Promise<void> {

@@ -1,7 +1,7 @@
 import {APIContext} from "astro";
 import {MonitoringProvider} from "../providers/MonitoringProvider";
 import { UtilsHelper_generateRandomString, UtilsHelper_getCurrentUrl} from "./UtilsHelper";
-import {CacheHelper_clearByTag, CacheHelper_getKeysByTag} from "./CacheHelper";
+import {CacheHelper_clearByTag, CacheHelper_getKeysByTag, CacheHelper_getCacheAdapter} from "./CacheHelper";
 import {LogHelper_error, LogHelper_debug} from "./LogHelper";
 
 enum NotificationType {
@@ -72,7 +72,11 @@ const podName = process.env.HOSTNAME;
 const userAgent = 'RingPublishing HatBot';
 
 export async function WebhookHelper_POST(context: APIContext) {
-    handleNotification(context)
+    // Processing is intentionally fire-and-forget (the CMS only needs the 200); never let it become an unhandled rejection
+    handleNotification(context).catch((e) => {
+        LogHelper_error('WebhookHelper: unhandled error in handleNotification', e);
+        MonitoringProvider.counter('error.WebhookHelper.handleNotification');
+    });
     MonitoringProvider.counter(`info.WebhookHelper.response_send_200`);
     return new Response('ok ' + podName, {});
 }
@@ -101,25 +105,21 @@ async function handleNotification(context: APIContext) {
 
     if (req.notificationType === NotificationType.variantConfigurationChanged && req.variantName) {
         const timer = MonitoringProvider.timer(`info.WebhookHelper.variantConfigurationChanged_CacheHelper_clearByTag`);
-        let cacheCleaner = {keys: 0, responses: 0};
-        cacheCleaner = await CacheHelper_clearByTag('config_' + req.variantName);
-
-        if (timer) {
-            timer.done();
+        try {
+            const cacheCleaner = await CacheHelper_clearByTag('config_' + req.variantName);
+            MonitoringProvider.gauge('info.WebhookHelper.variantConfigurationChanged', cacheCleaner.keys);
+        } catch (e) {
+            LogHelper_error('WebhookHelper: error variantConfigurationChanged', e);
+            MonitoringProvider.counter('error.WebhookHelper.variantConfigurationChanged');
+        } finally {
+            if (timer) {
+                timer.done();
+            }
         }
 
-        MonitoringProvider.gauge('info.WebhookHelper.variantConfigurationChanged', cacheCleaner.keys);
-
+        // Repeats are scheduled even after a failed purge, so a transient Redis problem is retried at +70 s / +305 s
         if (!req.hatDone) {
-            req.hatDone = true;
-            const stringifiedReq = JSON.stringify(req);
-            req.hatDone = false;
-            setTimeout(async () => {
-                repeatRequest(stringifiedReq, thisUrl, origin);
-            }, 1000 * 70);
-            setTimeout(async () => {
-                repeatRequest(stringifiedReq, thisUrl, origin);
-            }, 1000 * 305);
+            scheduleRepeats(req, thisUrl, origin);
         }
     }
 
@@ -137,76 +137,28 @@ async function handleNotification(context: APIContext) {
                     }
                 });
 
+                let processedAnyEvent = false;
                 for (const {resourceId, publicationPoints, objectType, isNew} of resourceIds) {
                     if (isNew) {
                         continue;
                     }
-                    const deleteCount = {
-                        keys: 0,
-                        responses: 0,
+                    processedAnyEvent = true;
+                    try {
+                        await handleContentApiEvent(resourceId, publicationPoints || [], objectType);
+                    } catch (e) {
+                        // One failing event must not abort the purge of the remaining events in this delivery
+                        LogHelper_error('WebhookHelper: error processing RING::ContentAPI event', {
+                            resourceId,
+                            objectType,
+                            errorMessage: e instanceof Error ? e.message : String(e),
+                        });
+                        MonitoringProvider.counter('error.WebhookHelper.contentApiEvent');
                     }
+                }
 
-                    if (objectType === 'Story') {
-                        const timer = MonitoringProvider.timer(`info.WebhookHelper.contentApiStory_clearStoryParentsByTag`);
-                        const cacheParentCleaner = await clearStoryParentsByTag('story_' + resourceId);
-                        deleteCount.keys += cacheParentCleaner.keys;
-                        if (timer) {
-                            timer.done();
-                        }
-                    }
-
-                    const timer = MonitoringProvider.timer(`info.WebhookHelper.contentApiStory_CacheHelper_clearByTag`);
-                    let cacheCleaner = await CacheHelper_clearByTag('story_' + resourceId);
-                    deleteCount.keys += cacheCleaner.keys;
-
-                    if (timer) {
-                        timer.done();
-                    }
-
-                    MonitoringProvider.gauge('info.WebhookHelper.publicationPoints', publicationPoints.length);
-                    for (const publicationPoint of publicationPoints) {
-                        const arrUrl = publicationPoint.url.split('/');
-                        const pubId = arrUrl[arrUrl.length - 1];
-                        const timer2 = MonitoringProvider.timer(`info.WebhookHelper.contentApiStory_pubPoint_CacheHelper_clearByTag`);
-
-                        const pubPointsCacheCleaner = await CacheHelper_clearByTag('pubId_' + `${pubId}`);
-                        if (timer2) {
-                            timer2.done();
-                        }
-                        deleteCount.keys += pubPointsCacheCleaner.keys;
-
-                        const url = `${publicationPoint.url}?antyCache=${UtilsHelper_generateRandomString()}`;
-                        fetch(url, { method: 'HEAD', headers: { 'User-Agent': userAgent, } }).catch(err => {
-                            LogHelper_error('WebhookHelper: fetch error', err);
-                            MonitoringProvider.counter('info.WebhookHelper.contentApiStory_pubPoint_CacheHelper_clearByTag_fetch_error');
-
-                            setTimeout(async () => {
-                                fetch(url, {
-                                    method: 'HEAD',
-                                    headers: {
-                                        'User-Agent': userAgent,
-                                    }
-                                }).catch((err) => {
-                                    LogHelper_error('WebhookHelper: fetch error catch', err);
-                                    MonitoringProvider.counter('info.WebhookHelper.contentApiStory_pubPoint_CacheHelper_clearByTag_fetch_error_catch');
-                                })
-                            }, 1000 * 70);
-                        })
-                    }
-                    MonitoringProvider.gauge('info.WebhookHelper.contentApiStory', deleteCount.keys);
-
-                    if (!req.hatDone) {
-                        req.hatDone = true;
-                        const stringifiedReq = JSON.stringify(req);
-                        req.hatDone = false;
-                        setTimeout(async () => {
-                            repeatRequest(stringifiedReq, thisUrl, origin);
-                        }, 1000 * 70);
-                        setTimeout(async () => {
-                            repeatRequest(stringifiedReq, thisUrl, origin);
-                        }, 1000 * 305);
-                    }
-
+                // Scheduled once per delivery, after every event was attempted, so a failing event cannot skip the repeats
+                if (processedAnyEvent && !req.hatDone) {
+                    scheduleRepeats(req, thisUrl, origin);
                 }
 
             } catch (e) {
@@ -215,6 +167,105 @@ async function handleNotification(context: APIContext) {
         }
     }
     MonitoringProvider.counter(`info.WebhookHelper.${req.hatDone ? 'request_for_repeat_end' : 'request_normal_end'}`);
+}
+
+/**
+ * Purges everything cached for one Content API event: lists of parent stories that embed this story,
+ * the story's own tag, and the page-level (pubId_) entries of each publication point, then warms the pages up.
+ */
+async function handleContentApiEvent(resourceId: string, publicationPoints: PublicationPoint[], objectType: string) {
+    const deleteCount = {
+        keys: 0,
+        responses: 0,
+    }
+
+    if (objectType === 'Story') {
+        const timer = MonitoringProvider.timer(`info.WebhookHelper.contentApiStory_clearStoryParentsByTag`);
+        const cacheParentCleaner = await clearStoryParentsByTag('story_' + resourceId);
+        deleteCount.keys += cacheParentCleaner.keys;
+        if (timer) {
+            timer.done();
+        }
+    }
+
+    const timer = MonitoringProvider.timer(`info.WebhookHelper.contentApiStory_CacheHelper_clearByTag`);
+    const cacheCleaner = await CacheHelper_clearByTag('story_' + resourceId);
+    deleteCount.keys += cacheCleaner.keys;
+
+    if (timer) {
+        timer.done();
+    }
+
+    MonitoringProvider.gauge('info.WebhookHelper.publicationPoints', publicationPoints.length);
+    for (const publicationPoint of publicationPoints) {
+        if (!publicationPoint?.url) {
+            continue;
+        }
+        const arrUrl = publicationPoint.url.split('/');
+        const pubId = arrUrl[arrUrl.length - 1];
+        const timer2 = MonitoringProvider.timer(`info.WebhookHelper.contentApiStory_pubPoint_CacheHelper_clearByTag`);
+
+        const pubPointsCacheCleaner = await CacheHelper_clearByTag('pubId_' + `${pubId}`);
+        if (timer2) {
+            timer2.done();
+        }
+        deleteCount.keys += pubPointsCacheCleaner.keys;
+
+        const url = `${publicationPoint.url}?antyCache=${UtilsHelper_generateRandomString()}`;
+        fetchWithStatusCheck(url, {method: 'HEAD', headers: {'User-Agent': userAgent}}, {
+            label: 'warm-up HEAD',
+            errorCounter: 'info.WebhookHelper.contentApiStory_pubPoint_CacheHelper_clearByTag_fetch_error',
+            retryErrorCounter: 'info.WebhookHelper.contentApiStory_pubPoint_CacheHelper_clearByTag_fetch_error_catch',
+            httpErrorCounter: 'error.WebhookHelper.warmUp_http_error',
+        });
+    }
+    MonitoringProvider.gauge('info.WebhookHelper.contentApiStory', deleteCount.keys);
+}
+
+/** Re-POSTs the same notification to this site after 70 s and 305 s (marked hatDone so it is not repeated again). */
+function scheduleRepeats(req: HatDone, thisUrl: string, origin: string) {
+    req.hatDone = true;
+    const stringifiedReq = JSON.stringify(req);
+    req.hatDone = false;
+    setTimeout(async () => {
+        repeatRequest(stringifiedReq, thisUrl, origin);
+    }, 1000 * 70);
+    setTimeout(async () => {
+        repeatRequest(stringifiedReq, thisUrl, origin);
+    }, 1000 * 305);
+}
+
+/**
+ * Fire-and-forget fetch that reports non-2xx responses (previously invisible) and retries once after 70 s
+ * on a network error. With redirect:'manual' a redirect surfaces as status 0 / type 'opaqueredirect'.
+ */
+function fetchWithStatusCheck(
+    url: string,
+    options: RequestInit,
+    counters: {label: string; errorCounter: string; retryErrorCounter: string; httpErrorCounter: string},
+    isRetry: boolean = false,
+): void {
+    fetch(url, options)
+        .then((res) => {
+            if (!res.ok) {
+                LogHelper_error(`WebhookHelper: ${counters.label} got a non-2xx response`, {
+                    url,
+                    status: res.status,
+                    type: res.type,
+                    isRetry,
+                });
+                MonitoringProvider.counter(counters.httpErrorCounter);
+            }
+        })
+        .catch((err) => {
+            LogHelper_error(`WebhookHelper: ${counters.label} fetch error${isRetry ? ' (retry)' : ''}`, err);
+            MonitoringProvider.counter(isRetry ? counters.retryErrorCounter : counters.errorCounter);
+            if (!isRetry) {
+                setTimeout(() => {
+                    fetchWithStatusCheck(url, options, counters, true);
+                }, 1000 * 70);
+            }
+        });
 }
 
 async function repeatRequest(req: string, thisUrl: string, origin: string) {
@@ -230,17 +281,12 @@ async function repeatRequest(req: string, thisUrl: string, origin: string) {
                     'User-Agent': userAgent,
                 }
             }
-            fetch(thisUrl, options).catch(err => {
-                LogHelper_error('WebhookHelper: fetch error repeatRequest', err);
-                MonitoringProvider.counter('info.WebhookHelper.repeatRequest_fetch_error');
-
-                setTimeout(async () => {
-                    fetch(thisUrl, options).catch(err => {
-                        LogHelper_error('WebhookHelper: fetch error repeatRequest catch', err);
-                        MonitoringProvider.counter('info.WebhookHelper.repeatRequest_fetch_error_catch');
-                    });
-                }, 1000 * 70);
-            })
+            fetchWithStatusCheck(thisUrl, options, {
+                label: 'repeatRequest',
+                errorCounter: 'info.WebhookHelper.repeatRequest_fetch_error',
+                retryErrorCounter: 'info.WebhookHelper.repeatRequest_fetch_error_catch',
+                httpErrorCounter: 'error.WebhookHelper.repeatRequest_http_error',
+            });
         } catch (e) {
             LogHelper_error('WebhookHelper: error repeatRequest', e);
             MonitoringProvider.counter(`info.WebhookHelper.repeatRequest_error`);
@@ -249,6 +295,14 @@ async function repeatRequest(req: string, thisUrl: string, origin: string) {
     }
 }
 
+const PARENT_MARKER_PREFIX = 'parent_';
+
+/**
+ * Invalidates the parent stories that embed the given story (related-content / similar-stories lists).
+ * Parents are recorded as `parent_<uuid>` members of the story's tag set by CacheHelper_createParentChildRelation.
+ * A marker is removed once its parent was purged: the parent re-registers itself on its next render, so the
+ * relation stays bounded to parents that actually rendered since the last republish.
+ */
 async function clearStoryParentsByTag(tag: string) {
     const keys = await CacheHelper_getKeysByTag(tag);
 
@@ -257,12 +311,19 @@ async function clearStoryParentsByTag(tag: string) {
         responses: 0
     }
     if (keys) {
+        const cacheAdapter = CacheHelper_getCacheAdapter();
         for (const key of keys) {
-            if (key.includes('parent_')) {
-                const splitKey = key.replaceAll('"', '').split('_');
+            if (typeof key === 'string' && key.startsWith(PARENT_MARKER_PREFIX)) {
+                const parentId = key.slice(PARENT_MARKER_PREFIX.length).replaceAll('"', '');
+                if (!parentId) {
+                    continue;
+                }
                 try {
-                    const res = await CacheHelper_clearByTag('story_' + `${splitKey[1]}`);
+                    const res = await CacheHelper_clearByTag('story_' + parentId);
                     deleteCount.keys += res.keys;
+                    if (cacheAdapter.removeKeyFromTag) {
+                        await cacheAdapter.removeKeyFromTag(tag, key);
+                    }
                 } catch (e) {
                     LogHelper_error('WebhookHelper: clearStoryParentsByTag error parent', e);
                 }

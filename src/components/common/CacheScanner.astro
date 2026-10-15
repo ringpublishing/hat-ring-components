@@ -56,7 +56,9 @@ const podName = process.env.HOSTNAME;
                 totalKeysEl.innerText = data.totalKeys;
             }
             if (statusEl) {
-                statusEl.innerText = data.status;
+                statusEl.innerText = data.timedOut
+                    ? `${data.status} (timeout after ${Math.round((data.durationMs || 0) / 1000)}s: keyspace NOT fully scanned, results are incomplete)`
+                    : data.status;
             }
 
             if (['done', 'stopped'].includes(data.status)) {
