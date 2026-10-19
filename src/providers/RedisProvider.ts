@@ -44,6 +44,32 @@ const LOGGED_KEY_MAX_LENGTH = 300;
 // During a Redis outage every cache operation fails; log one sample per scope per interval instead of one line per call
 const ERROR_LOG_THROTTLE_MS = 10000;
 
+/**
+ * How the client connects:
+ *  - 'aws'   (the default): ElastiCache over TLS with IAM (SigV4) auth, host from REDIS_RW, the token re-sent
+ *            every 10 s;
+ *  - 'local': a plain node-redis URL from REDIS_URL (e.g. redis://localhost:6379), no TLS, no IAM; credentials
+ *            and database come from the URL (database 1 when the URL names none, i.e. the same db as 'aws').
+ * REDIS_MODE picks one explicitly. Unset, the mode is 'local' only when REDIS_URL is set AND NODE_ENV is not
+ * 'production', so a REDIS_URL that leaked into a production build (via .env at build time) never redirects it.
+ */
+export type RedisConnectionMode = 'aws' | 'local';
+const LOCAL_MODE_RECONNECT_MAX_DELAY_MS = 1000;
+
+export function RedisProvider_resolveConnectionMode(
+    env: Record<string, string | undefined> = process.env,
+    localUrl?: string
+): RedisConnectionMode {
+    const requested = (env.REDIS_MODE || '').trim().toLowerCase();
+    if (requested === 'local' || requested === 'aws') {
+        return requested;
+    }
+    if (requested) {
+        LogHelper_error(`RedisProvider: unknown REDIS_MODE "${env.REDIS_MODE}", expected "aws" or "local"; detecting the mode automatically`);
+    }
+    return localUrl && env.NODE_ENV !== 'production' ? 'local' : 'aws';
+}
+
 // Lua keeps this atomic: removes members from a tag set only if their key does not exist at that very moment
 // (no EXISTS -> SREM race with a concurrent re-write of the key).
 const LUA_SREM_IF_KEY_MISSING = `local removed = 0
@@ -92,9 +118,15 @@ export class RedisProvider {
     lastTagRefresh: Map<string, number>;
     lastErrorLog: Map<string, {at: number; suppressed: number}>;
     initPromise: Promise<void> | null;
+    /** See RedisConnectionMode: 'aws' (ElastiCache + IAM, the default) or 'local' (plain REDIS_URL). */
+    connectionMode: RedisConnectionMode;
+    /** REDIS_URL as resolved at construction: runtime env first, then the build-time Vite value. */
+    localUrl: string | undefined;
 
     constructor() {
         this.url = process.env.REDIS_RW;
+        this.localUrl = RedisProvider._readLocalUrl();
+        this.connectionMode = RedisProvider_resolveConnectionMode(process.env, this.localUrl);
         this.replicationGroupId = process.env.REDIS_REPLICATION_GROUP_ID;
         this.username = process.env.REDIS_USERNAME ||'iam-user';
         this.region = process.env.REDIS_REGION || 'eu-central-1';
@@ -107,28 +139,58 @@ export class RedisProvider {
         this.initPromise = null;
         this._configureTtls();
 
-        setInterval(async () => {
-            if (!this.client) {
-                return;
-            }
-            try {
-                const token = await this.getToken();
-                if (!token) {
-                    MonitoringProvider.counter('error.RedisProvider.token_refresh');
+        // IAM tokens are short-lived, so the AWS client re-authenticates periodically; a local Redis has no token.
+        if (this.connectionMode === 'aws') {
+            setInterval(async () => {
+                if (!this.client) {
                     return;
                 }
+                try {
+                    const token = await this.getToken();
+                    if (!token) {
+                        MonitoringProvider.counter('error.RedisProvider.token_refresh');
+                        return;
+                    }
 
-                await this.client.auth({
-                    username: process.env.REDIS_USERNAME ||'iam-user',
-                    password: token,
-                });
-            } catch (err) {
-                MonitoringProvider.counter('error.RedisProvider.token_refresh');
-                this._logErrorThrottled('auth', 'RedisProvider periodic AUTH failed', {
-                    errorMessage: err instanceof Error ? err.message : String(err),
-                });
-            }
-        }, 10 * 1000);
+                    await this.client.auth({
+                        username: process.env.REDIS_USERNAME ||'iam-user',
+                        password: token,
+                    });
+                } catch (err) {
+                    MonitoringProvider.counter('error.RedisProvider.token_refresh');
+                    this._logErrorThrottled('auth', 'RedisProvider periodic AUTH failed', {
+                        errorMessage: err instanceof Error ? err.message : String(err),
+                    });
+                }
+            }, 10 * 1000);
+        }
+    }
+
+    /**
+     * REDIS_URL for the 'local' mode. The runtime environment (k8s, dotenv) wins over the value Vite inlined at
+     * build time from .env (the only source a plain `astro dev` without dotenv has).
+     */
+    static _readLocalUrl(): string | undefined {
+        if (process.env.REDIS_URL) {
+            return process.env.REDIS_URL;
+        }
+        try {
+            // @ts-ignore import.meta.env is provided by Vite/Astro (same pattern as AcceleratorImagesHelper)
+            return import.meta.env.REDIS_URL || undefined;
+        } catch {
+            // not bundled by Vite (plain node): import.meta.env does not exist there
+            return undefined;
+        }
+    }
+
+    /** The URL without credentials, for logs. */
+    static _redactUrl(url: string): string {
+        try {
+            const parsed = new URL(url);
+            return `${parsed.protocol}//${parsed.host}${parsed.pathname}`;
+        } catch {
+            return '<invalid url>';
+        }
     }
 
     /**
@@ -153,6 +215,14 @@ export class RedisProvider {
     }
 
     async createRedisClient() {
+        if (this.connectionMode === 'local') {
+            this.createLocalRedisClient();
+            return;
+        }
+        await this.createAwsRedisClient();
+    }
+
+    async createAwsRedisClient() {
         const token = await this.getToken();
         this.client = createClient({
             username: this.username,
@@ -169,6 +239,29 @@ export class RedisProvider {
                         MonitoringProvider.counter('error.RedisProvider.reconnectStrategy');
                         return retries * 500;
                     }
+                },
+            },
+        }) as RedisClientType;
+    }
+
+    /**
+     * Plain client for a Redis reachable without IAM (local docker, a non-AWS deployment). Everything the URL
+     * carries (user, password, db) wins over the defaults below; without a db in the URL it uses db 1 like the
+     * AWS client, so the same CacheScanner / FLUSHDB routines apply.
+     */
+    createLocalRedisClient() {
+        if (!this.localUrl) {
+            LogHelper_error('RedisProvider: REDIS_MODE=local but REDIS_URL is not set; the cache stays unavailable');
+            throw new Error('RedisProvider: REDIS_MODE=local requires REDIS_URL');
+        }
+        LogHelper_info('RedisProvider: connecting in local mode', {url: RedisProvider._redactUrl(this.localUrl)});
+        this.client = createClient({
+            url: this.localUrl,
+            database: 1,
+            socket: {
+                reconnectStrategy: (retries) => {
+                    MonitoringProvider.counter('error.RedisProvider.reconnectStrategy');
+                    return Math.min(retries * 50, LOCAL_MODE_RECONNECT_MAX_DELAY_MS);
                 },
             },
         }) as RedisClientType;
