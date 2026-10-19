@@ -2,7 +2,8 @@ import {gql} from '@ringpublishing/graphql-api-client-got';
 import {WebsitesApiClient} from '@ringpublishing/graphql-api-client-got';
 import {DocumentNode} from "graphql/language/ast";
 import {
-    CacheHelper_set, CacheHelper_getDecoratedCachedObject, CacheHelper_isExpired, CacheHelper_normalizeTtl
+    CacheHelper_set, CacheHelper_getDecoratedCachedObject, CacheHelper_isExpired, CacheHelper_normalizeTtl,
+    CacheHelper_normalizeQuery
 } from "../helpers/CacheHelper";
 import {MonitoringProvider} from "./MonitoringProvider";
 import {LogHelper_error, LogHelper_info} from "../helpers/LogHelper";
@@ -19,6 +20,16 @@ const DEGRADED_RESPONSE_TTL_SECONDS = Number(process.env.CACHE_TTL_DEGRADED_RESP
 const NOT_FOUND_RESPONSE_TTL_SECONDS = Number(process.env.CACHE_TTL_NOT_FOUND_RESPONSE) > 0
     ? Number(process.env.CACHE_TTL_NOT_FOUND_RESPONSE)
     : 300;
+// Opt-in: the GraphQL text is normalised (whitespace, commas) before it becomes part of the cache key, so one query
+// in two formattings shares a single entry. Toggling it changes every key (a cold cache), so flip it together with a
+// FLUSHDB. RRO_NORMALIZE_REDIS_KEYS is the name the Ringier-Romania fork shipped with and keeps working as an alias.
+const NORMALIZE_QUERY_CACHE_KEYS = process.env.CACHE_NORMALIZE_QUERY_KEYS === '1'
+    || process.env.RRO_NORMALIZE_REDIS_KEYS === '1';
+if (process.env.RRO_NORMALIZE_REDIS_KEYS !== undefined && process.env.CACHE_NORMALIZE_QUERY_KEYS === undefined) {
+    LogHelper_info('WebsiteApiProvider: RRO_NORMALIZE_REDIS_KEYS is an alias of CACHE_NORMALIZE_QUERY_KEYS', {
+        RRO_NORMALIZE_REDIS_KEYS: process.env.RRO_NORMALIZE_REDIS_KEYS,
+    });
+}
 
 export class WebsiteApiProvider {
     /**
@@ -27,7 +38,10 @@ export class WebsiteApiProvider {
      *                        whose variables do not carry the story id in a recognised variable name)
      */
     static async call(query: DocumentNode, variables, cacheTtl: null | number = null, additionalTags: string[] = []): Promise<any> {
-        const cacheKeyString = JSON.stringify({query: query.loc?.source.body, variables});
+        const cacheKeyString = this._cacheKeyFor(query, variables);
+        if (cacheKeyString === null) {
+            return null;
+        }
         const queryType = this._determineQueryType(query);
         const tags = this._mergeTags(this.determineQueryTags(query, variables, queryType), additionalTags);
 
@@ -90,6 +104,29 @@ export class WebsiteApiProvider {
         } catch (e) {
             MonitoringProvider.counter('error.WebsitesApiProvider.call.catch');
             LogHelper_error('WebsitesApiProvider.call error:', e);
+            return null;
+        }
+    }
+
+    /**
+     * The string the cache adapter hashes into the Redis key: the query text (normalised when
+     * CACHE_NORMALIZE_QUERY_KEYS=1) plus the variables. Null when it cannot be built (a non-serialisable variable);
+     * the caller then returns null like it does for every other failure of call().
+     */
+    static _cacheKeyFor(query: DocumentNode, variables): string | null {
+        try {
+            const body = query.loc?.source.body;
+            return JSON.stringify({
+                query: NORMALIZE_QUERY_CACHE_KEYS ? CacheHelper_normalizeQuery(body) : body,
+                variables,
+            });
+        } catch (e) {
+            LogHelper_error('WebsitesApiProvider.call key build failed', {
+                query: query.loc?.source.body?.slice(0, 200),
+                variableKeys: variables ? Object.keys(variables) : null,
+                errorMessage: e instanceof Error ? e.message : String(e),
+            });
+            MonitoringProvider.counter('error.WebsitesApiProvider.call.keyBuild');
             return null;
         }
     }
@@ -162,6 +199,9 @@ export class WebsiteApiProvider {
             'site(': 'Site',
             'section(': 'Section',
             'sectionGroup(': 'SectionGroup',
+            // Checked last on purpose: a GenericList whose header uses {{dynamicName}} embeds `dynamicName: topic(id: $topicId)`
+            // next to its `stories(` and must stay 'Stories' (that is where its story_<uuid> tag comes from).
+            'topic(': 'Topic',
         };
 
         const queryBody = query.loc?.source.body || '';
@@ -198,6 +238,15 @@ export class WebsiteApiProvider {
 
             if (queryType === 'Section' || queryType === 'SectionGroup') {
                 tags.push(`section_${variables.codeName}`);
+            }
+
+            // topic(id: $id) queries (TopicTitle, TopicDescription). No webhook clears this tag yet;
+            // invalidate with CacheHelper_clearByTag('topic_<id>') from the site.
+            if (queryType === 'Topic') {
+                const topicId = variables.id ?? variables.ID;
+                if (topicId) {
+                    tags.push(`topic_${topicId}`);
+                }
             }
         }
 
