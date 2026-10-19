@@ -9,7 +9,10 @@ import {
 import {WebsiteApiProvider} from "../../../../providers/WebsiteApiProvider";
 import {AppContext, SiteContentType} from "../../../../types/types";
 import _ from "lodash";
-import {WidgetHelper_calculateOffsetForGenericListPagination} from "../../../../helpers/GenericListHelper";
+import {
+    GenericListHelper_isDeepPaginationEnabled,
+    WidgetHelper_calculateOffsetForGenericListPagination
+} from "../../../../helpers/GenericListHelper";
 
 export async function GenericList_getData(context: AppContext, queryNodeFragment, widgetConfig, extendableAttributes, currentPage) {
     const searchPhrase = UtilsHelper_stripHtmlTags(UtilsHelper_getQueryParam(UtilsHelper_getSearchQueryParamKey(), context) || '');
@@ -57,18 +60,37 @@ export async function GenericList_getData(context: AppContext, queryNodeFragment
 
     let contentTypeFilter = '';
 
+    // Needed before the switch: with deep pagination the Story case declares $topicId only when the header uses it.
+    const queryForDynamicName = getQueryForDynamicName(context, widgetConfig);
+    // DEEP_PAGINATION_ENABLED=1 also switches the stories filter to the deep-pagination shape: canonical: true, no
+    // category filter on topic/author/story pages, $topicId declared only where used. Off = the historical query,
+    // byte for byte, so existing cache keys stay valid.
+    const isDeepPaginationQuery = GenericListHelper_isDeepPaginationEnabled();
+
     switch (context.siteContentType) {
         case SiteContentType.Topic:
-            contentTypeFilter = 'topic: {in: [$topicId]}, category: {in: [$nodeCategoryId]}';
-            dynamicVariablesTypes.$nodeCategoryId = 'UUID!';
-            dynamicVariables.nodeCategoryId = nodeCategoryId;
+            if (isDeepPaginationQuery) {
+                contentTypeFilter = 'topic: {in: [$topicId]}, canonical: true';
+                dynamicVariablesTypes.$topicId = 'UUID!';
+                dynamicVariables.topicId = contentFilterId;
+            } else {
+                contentTypeFilter = 'topic: {in: [$topicId]}, category: {in: [$nodeCategoryId]}';
+                dynamicVariablesTypes.$nodeCategoryId = 'UUID!';
+                dynamicVariables.nodeCategoryId = nodeCategoryId;
+            }
             break;
         case SiteContentType.Author:
             if (!widgetConfig.customListUuid) {
-                contentTypeFilter = 'category: {in: [$topicId]}, author:{in:[$authorId]}';
+                contentTypeFilter = isDeepPaginationQuery
+                    ? 'author:{in:[$authorId]}, canonical: true'
+                    : 'category: {in: [$topicId]}, author:{in:[$authorId]}';
                 dynamicVariablesTypes.$authorId = 'UUID!';
                 contentFilterId = nodeCategoryId;
                 dynamicVariables.authorId = context.id;
+            } else if (isDeepPaginationQuery) {
+                contentTypeFilter = 'category: {in: [$topicId]}, canonical: true';
+                dynamicVariablesTypes.$topicId = 'UUID!';
+                dynamicVariables.topicId = contentFilterId;
             } else {
                 contentTypeFilter = 'category: {in: [$topicId]}';
             }
@@ -77,10 +99,25 @@ export async function GenericList_getData(context: AppContext, queryNodeFragment
             dynamicVariablesTypes.$storyUuid = 'UUID!';
             dynamicVariables.storyUuid = contentFilterId;
             contentFilterId = nodeCategoryId;
-            contentTypeFilter = 'category: {in: [$topicId]}, id:{notIn: [$storyUuid]}';
+            if (isDeepPaginationQuery) {
+                contentTypeFilter = 'id:{notIn: [$storyUuid]}, canonical: true';
+                // $topicId is only needed when the dynamicName header reads the topic
+                if (queryForDynamicName.includes('$topicId')) {
+                    dynamicVariablesTypes.$topicId = 'UUID!';
+                    dynamicVariables.topicId = contentFilterId;
+                }
+            } else {
+                contentTypeFilter = 'category: {in: [$topicId]}, id:{notIn: [$storyUuid]}';
+            }
             break;
         default:
-            contentTypeFilter = 'category: {in: [$topicId]}';
+            if (isDeepPaginationQuery) {
+                contentTypeFilter = 'category: {in: [$topicId]}, canonical: true';
+                dynamicVariablesTypes.$topicId = 'UUID!';
+                dynamicVariables.topicId = contentFilterId;
+            } else {
+                contentTypeFilter = 'category: {in: [$topicId]}';
+            }
             break;
     }
     const searchPhraseFragment = searchPhrase ? `, phrase: $searchPhrase` : '';
@@ -100,23 +137,32 @@ export async function GenericList_getData(context: AppContext, queryNodeFragment
     const isAjaxCall = UtilsHelper_getQueryParam('gridLocationWidgetType', context) === 'genericList';
     const isFirstCall = UtilsHelper_getQueryParam('isFirstCall', context) === '1';
     const offset = WidgetHelper_calculateOffsetForGenericListPagination(widgetConfig, currentPage, isAjaxCall, isFirstCall);
-    const queryForDynamicName = getQueryForDynamicName(context, widgetConfig);
 
-    const variables: any = {
-        ...dynamicVariables,
-        topicId: contentFilterId,
-        limit: UtilsHelper_convertToInt(widgetConfig.paginationElements),
-        offset: offset,
-        excludedFlags: excludedFlags,
-    };
+    // Historical shape keeps $topicId in the operation header and `topicId` right after the spread (key order is part
+    // of the cache key); the deep-pagination shape carries topicId inside dynamicVariables only where it is declared.
+    const variables: any = isDeepPaginationQuery
+        ? {
+            ...dynamicVariables,
+            limit: UtilsHelper_convertToInt(widgetConfig.paginationElements),
+            offset: offset,
+            excludedFlags: excludedFlags,
+        }
+        : {
+            ...dynamicVariables,
+            topicId: contentFilterId,
+            limit: UtilsHelper_convertToInt(widgetConfig.paginationElements),
+            offset: offset,
+            excludedFlags: excludedFlags,
+        };
 
     if (searchPhrase) {
         variables.searchPhrase = searchPhrase;
     }
 
+    const topicIdDeclaration = isDeepPaginationQuery ? '' : '$topicId: UUID!, ';
 
     const query = gql`
-        query($topicId: UUID!, $limit: Int!, $excludedFlags: [String!], $offset: Int! ${mappedDynamicVariablesTypes}){
+        query(${topicIdDeclaration}$limit: Int!, $excludedFlags: [String!], $offset: Int! ${mappedDynamicVariablesTypes}){
             stories: stories(filter:{${contentTypeFilter}, flag: {notIn:$excludedFlags}},limit: $limit, offset: $offset ${searchPhraseFragment} ){
                 total
                 genericListReqTotal: total
