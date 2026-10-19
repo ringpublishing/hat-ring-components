@@ -27,6 +27,8 @@
 | CACHE_TTL_NOT_FOUND_RESPONSE | No | 300 | TTL for GraphQL responses without any entity, e.g. `{story: null}` |
 | CACHE_CLEAN_INTERVAL | No | 60 | Full flush interval of the in-process NodeCache (seconds). Ignored with Redis, which reclaims expired keys itself |
 | CACHE_TAG_REFRESH_INTERVAL | No | 3600 | Redis only: throttle (seconds, per tag+key) for re-asserting tag membership on reads. Cache keys and tag sets never carry a Redis TTL (memory is reclaimed by `allkeys-*` eviction), so this only bounds how fast a key re-registers itself after its tag set was evicted; watch `info.RedisProvider.clearByTag.emptyTagSet`. `CACHE_TAG_TTL` is ignored |
+| CACHE_NORMALIZE_QUERY_KEYS | No | 0 | 1 = normalise the GraphQL text (whitespace, commas) before it becomes part of the cache key, so one query in two formattings shares an entry. Toggling changes every key (cold cache), so flip it together with a FLUSHDB. `RRO_NORMALIZE_REDIS_KEYS=1` is accepted as an alias |
+| DEEP_PAGINATION_ENABLED | No | 0 | 1 = GenericList may paginate past the FTS limit of 1000 items; also switches the GenericList stories query to the deep-pagination shape (`canonical: true`, no category filter on topic/author/story pages, `$topicId` only where used). Off = the historical query and cache keys |
 | USE_REDIS | No | 0 | 0=NodeCache, 1=Redis |
 | MEM_CACHE_FOR_CONFIG_MODE | No | 'request' | Config caching mode: 'request', 'time', 'none' |
 | MEM_CACHE_FOR_CONFIG_TTL_MS | No | 1000 | TTL for time-based config cache (ms) |
@@ -36,11 +38,14 @@
 | NEXT_PUBLIC_ACC_IMAGES_TRANSFORMATION_KEY | No | — | Image CDN transformation key |
 
 ### Redis (when USE_REDIS=1):
-| Variable | Description |
-|----------|-------------|
-| REDIS_HOST | Redis server hostname |
-| REDIS_PORT | Redis server port |
-| REDIS_PASSWORD | Redis authentication |
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| REDIS_MODE | No | auto | `aws` = ElastiCache over TLS with IAM (SigV4) auth; `local` = plain node-redis URL from `REDIS_URL`. Unset: `local` only when `REDIS_URL` is set **and** `NODE_ENV` is not `production`, otherwise `aws` |
+| REDIS_RW | aws | — | ElastiCache primary endpoint host |
+| REDIS_REPLICATION_GROUP_ID | aws | — | Replication group id the IAM token is presigned for |
+| REDIS_USERNAME | No | iam-user | IAM-enabled Redis user |
+| REDIS_REGION | No | eu-central-1 | AWS region for the SigV4 presign |
+| REDIS_URL | local | — | e.g. `redis://localhost:6379`; user, password and db come from the URL (db 1 when the URL names none, like the AWS client) |
 
 ## 2. CMS Configuration (ConfigHelper)
 Site settings stored in CMS and fetched via GraphQL:

@@ -463,6 +463,7 @@ WebsiteApiProvider.call(query, variables, ttl)
 - Story queries → tagged `story_<uuid>`
 - Config queries → tagged `config_<variant>`
 - Section queries → tagged `section_<codeName>`
+- Topic queries (`topic(id: $id)`, e.g. TopicTitle) → tagged `topic_<id>`. No webhook clears it yet: invalidate with `CacheHelper_clearByTag('topic_<id>')`. `topic(` is matched last, so a GenericList whose `{{dynamicName}}` header embeds `topic(` stays a Stories query
 - Anything else → pass tags explicitly: `WebsiteApiProvider.call(query, variables, cacheTtl, ['story_<uuid>'])`. Use this whenever the story id is not carried by a recognised variable (`storyId`, `id`, `uuid`, …), e.g. a `stories(filter: {id: {notIn: $excludedIds}})` query.
 
 Responses that carry GraphQL `errors` are cached for `CACHE_TTL_DEGRADED_RESPONSE` (default 60 s) and responses whose `data` holds no entity (`{story: null}`) for `CACHE_TTL_NOT_FOUND_RESPONSE` (default 300 s) instead of the caller's TTL. `CacheHelper_isExpired` treats only a *shortened* configured TTL as a change, so these shorter entries simply expire on time.

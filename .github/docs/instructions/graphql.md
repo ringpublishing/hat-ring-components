@@ -43,11 +43,14 @@ new WebsitesApiClient({
 
 The provider inspects query body to determine type:
 
-- `story(` → Tag: `story_${uuid}`
+- `story(` → Tag: `story_${uuid}` (uuid taken from a `storyId`, `id`, `uuid`, … variable)
+- `stories(` → Tag: `story_${uuid}` when such a variable is present (parent story → related children)
 - `config(` → Tag: `config_${variant}`
-- `section(` → Tag: `section_${codeName}`
-- `node(` → Tag: `node_${id}`
-- `author(` → Tag: `author_${id}`
+- `section(` / `sectionGroup(` → Tag: `section_${codeName}`
+- `topic(` → Tag: `topic_${id}` (checked last, so a stories query with a `topic(` sub-field stays `Stories`)
+- `node(`, `author(`, `site(` → no tag (type only, for metrics)
+
+The key is `sha1(JSON.stringify({query, variables}))`; with `CACHE_NORMALIZE_QUERY_KEYS=1` the query text is whitespace/comma-normalised first (`CacheHelper_normalizeQuery`).
 
 Tags enable targeted cache invalidation via `CacheHelper_clearByTag()`.
 
