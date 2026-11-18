@@ -4,7 +4,7 @@ const {widgetConfig, context} = Astro.props as {
     context: AppContext;
 };
 import _ from "lodash";
-import {WidgetHelper_getWidgetCssClasses, WidgetHelper_getWidgetId, WidgetHelper_renderEmptyComponent} from "../../../../helpers/WidgetHelper";
+import {WidgetHelper_getWidgetCssClasses, WidgetHelper_renderEmptyComponent} from "../../../../helpers/WidgetHelper";
 import {TopicTitleWidgetConfig, TopicTitleResponse} from "./types";
 import {gql} from "graphql-tag";
 import {WebsiteApiProvider} from "../../../../providers/WebsiteApiProvider";
@@ -44,7 +44,7 @@ if (!title) {
     toRender ? (
         <Fragment set:html={toRender} />
     ) : (
-        <div id={WidgetHelper_getWidgetId(widgetConfig)} class={WidgetHelper_getWidgetCssClasses("TopicTitle", widgetConfig, context)}>
+        <div class={WidgetHelper_getWidgetCssClasses("TopicTitle", widgetConfig, context)}>
             <h1>{title}</h1>
         </div>
     )

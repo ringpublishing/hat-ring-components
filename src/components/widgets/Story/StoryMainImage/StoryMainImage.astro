@@ -7,7 +7,7 @@ import _ from 'lodash';
 import {StoryMainImageParams, StoryMainImageResponse} from "./types";
 import RingImage from "../../../common/RingImage.astro";
 import {
-    WidgetHelper_getWidgetCssClasses, WidgetHelper_getWidgetId
+    WidgetHelper_getWidgetCssClasses
 } from "../../../../helpers/WidgetHelper";
 import {
     ImageHelper_getImageMetaData,
@@ -35,7 +35,7 @@ const processedImage = await ImageHelper_processImage({
 
 ---
 
-<div id={WidgetHelper_getWidgetId(widgetConfig)} class={WidgetHelper_getWidgetCssClasses('StoryMainImage', widgetConfig, context)}>
+<div class={WidgetHelper_getWidgetCssClasses('StoryMainImage', widgetConfig, context)}>
     {processedImage.url && (
             <>
                 {widgetConfig.showLinkToImage ? (

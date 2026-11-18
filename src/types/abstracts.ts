@@ -20,11 +20,6 @@ export const AbstractWebsitesWidgetConfigParamsDescription = {
         "description": "custom CSS class",
         "type": "textfield"
     },
-    "customId": {
-        "name": "custom CSS ID",
-        "description": "id of the widget element, e.g. the target of a #anchor link",
-        "type": "textfield"
-    },
     "customPosition": {
         "name": "Custom position",
         "description": "(widget in BOX)",
@@ -53,7 +48,6 @@ export const AbstractWebsitesWidgetConfigDefaultParams = {
     "platformDesktop": true,
     "platformMobile": true,
     "customClass": "",
-    "customId": "",
     "customPosition": "none",
     "customWidth": "none"
 }

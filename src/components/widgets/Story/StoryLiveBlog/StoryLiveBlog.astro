@@ -5,7 +5,7 @@ import {gql} from 'graphql-tag';
 import {AbstractWidgetConfig, ComponentParams, WidgetParams} from "../../../../types/types";
 import {WebsiteApiProvider} from "../../../../providers/WebsiteApiProvider";
 import {default as ExternalApplication} from "../../common/ExternalApplication.astro";
-import {WidgetHelper_getWidgetCssClasses, WidgetHelper_getWidgetId} from "../../../../helpers/WidgetHelper";
+import {WidgetHelper_getWidgetCssClasses} from "../../../../helpers/WidgetHelper";
 
 interface StoryLiveBlogParams extends WidgetParams {
     widgetConfig: StoryLiveBlogParamsConfig
@@ -57,7 +57,7 @@ let url = `${liveBlogPlatformUrl}/${liveblogUuid},${widgetConfig.liveBlogLanguag
 {toRender ?
     <Fragment set:html={toRender}/> :
 
-    <div id={WidgetHelper_getWidgetId(widgetConfig)} class={WidgetHelper_getWidgetCssClasses('StoryLiveBlog', widgetConfig, context)}>
+    <div class={WidgetHelper_getWidgetCssClasses('StoryLiveBlog', widgetConfig, context)}>
         <ExternalApplication widgetConfig={{controllerUrl: url, selector: '[name="block-html-head"]'}}
                              context={context}/>
         <ExternalApplication widgetConfig={{controllerUrl: url, selector: '[name="block-body-section"]'}}

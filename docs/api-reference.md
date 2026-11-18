@@ -14,7 +14,6 @@ Everything below is exported from the package entry point unless stated otherwis
 | `WidgetHelper_renderEmptyWidget(widgetConfig)` | Placeholder markup that preserves grid structure |
 | `WidgetHelper_renderEmptyComponent(className, message?, visible?)` | Placeholder for a sub-component, with an optional diagnostic message shown in development |
 | `WidgetHelper_getWidgetCssClasses(name, widgetConfig, context, extraClasses)` | Builds the root class list, including the project CSS-module class |
-| `WidgetHelper_getWidgetId(widgetConfig)` | `id` for the widget root element from `customId`, `undefined` when empty |
 | `WidgetHelper_findWidgetConfig(...)` | Locates another widget's configuration in the grid |
 | `WidgetHelper_getAppropriateTeaserImage(...)` | Picks the right teaser variant for the current platform and configuration |
 | `WidgetHelper_buildWidgetLocation(sectionName, boxName, index)` | Stable widget id used by Grid Edit |

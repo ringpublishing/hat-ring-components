@@ -1,7 +1,7 @@
 ---
 import RingLink from "../../../common/RingLink.astro";
 import RingImage from "../../../common/RingImage.astro";
-import {WidgetHelper_getWidgetCssClasses, WidgetHelper_getWidgetId, WidgetHelper_renderEmptyWidget} from "../../../../helpers/WidgetHelper";
+import {WidgetHelper_getWidgetCssClasses, WidgetHelper_renderEmptyWidget} from "../../../../helpers/WidgetHelper";
 import {ImageParams} from "./types";
 import styles from '../../../../../styles/widgets/common/SingleImage.module.scss';
 import {UtilsHelper_getValueIfExists, UtilsHelper_isMobile} from "../../../../helpers/UtilsHelper";
@@ -46,7 +46,7 @@ const cssClasses = WidgetHelper_getWidgetCssClasses('SingleImage', widgetConfig,
 ---
 {toRender ?
     <Fragment set:html={toRender}/> :
-    <div id={WidgetHelper_getWidgetId(widgetConfig)} class={cssClasses}>
+    <div class={cssClasses}>
         {urlLink ? (
             <RingLink
                 href={urlLink}

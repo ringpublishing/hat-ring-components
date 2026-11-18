@@ -1,7 +1,7 @@
 ---
 const {widgetConfig, context} = Astro.props;
 import {AbstractWidgetConfig, WidgetParams} from "../../../types/types";
-import {WidgetHelper_getWidgetCssClasses, WidgetHelper_getWidgetId} from "../../../helpers/WidgetHelper";
+import {WidgetHelper_getWidgetCssClasses} from "../../../helpers/WidgetHelper";
 import * as cheerio from 'cheerio';
 
 interface ExternalApplicationParams extends WidgetParams {
@@ -34,4 +34,4 @@ try {
 }
 
 ---
-<div id={WidgetHelper_getWidgetId(widgetConfig)} class={WidgetHelper_getWidgetCssClasses('ExternalApplication', widgetConfig, context)} set:html={html}/>
+<div class={WidgetHelper_getWidgetCssClasses('ExternalApplication', widgetConfig, context)} set:html={html}/>

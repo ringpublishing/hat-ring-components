@@ -1,7 +1,7 @@
 ---
 import {Author_getData} from "../../../../helpers/AuthorsHelper";
 const {widgetConfig, context} = Astro.props;
-import {WidgetHelper_getWidgetCssClasses, WidgetHelper_getWidgetId} from "../../../../helpers/WidgetHelper";
+import {WidgetHelper_getWidgetCssClasses} from "../../../../helpers/WidgetHelper";
 import styles from "../../../../../styles/widgets/Story/StoryAuthors.module.scss";
 import {default as StoryAuthor} from "../../Story/StoryAuthors/StoryAuthor.astro";
 
@@ -15,6 +15,6 @@ if (!response) {
 let cssModules = styles.StoryAuthors;
 ---
 
-<div id={WidgetHelper_getWidgetId(widgetConfig)} class={WidgetHelper_getWidgetCssClasses('Author', widgetConfig, context, [cssModules])}>
+<div class={WidgetHelper_getWidgetCssClasses('Author', widgetConfig, context, [cssModules])}>
     <StoryAuthor author={response.data.author} context={context} widgetConfig={widgetConfig}/>
 </div>

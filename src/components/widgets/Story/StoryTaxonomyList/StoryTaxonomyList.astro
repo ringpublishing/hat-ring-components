@@ -7,7 +7,7 @@ import {gql} from 'graphql-tag';
 import {WebsiteApiProvider} from "../../../../providers/WebsiteApiProvider";
 import {StoryTaxonomyListResponse} from "./types";
 import RingLink from "../../../common/RingLink.astro";
-import {WidgetHelper_getWidgetCssClasses, WidgetHelper_getWidgetId, WidgetHelper_renderEmptyWidget, WidgetHelper_shouldHideWidget} from "../../../../helpers/WidgetHelper";
+import {WidgetHelper_getWidgetCssClasses, WidgetHelper_renderEmptyWidget, WidgetHelper_shouldHideWidget} from "../../../../helpers/WidgetHelper";
 import {default as TextReplacer} from "../../../common/TextReplacer.astro";
 
 const query = gql`
@@ -69,7 +69,7 @@ if (!toRender && sortedTopics.length === 0) {
 ---
 {toRender ?
     <Fragment set:html={toRender}/> :
-    <div id={WidgetHelper_getWidgetId(widgetConfig)} class={WidgetHelper_getWidgetCssClasses('StoryTaxonomyList', widgetConfig, context)}>
+    <div class={WidgetHelper_getWidgetCssClasses('StoryTaxonomyList', widgetConfig, context)}>
         {widgetConfig.listPrefix && <TextReplacer context={context} config={{}} text={widgetConfig.listPrefix} tag={"span"} props={{class: 'listPrefix'}}/>}
 
         {sortedTopics.map((topic, index) => {

@@ -6,7 +6,7 @@ import {WebsiteApiProvider} from "../../../../providers/WebsiteApiProvider";
 import {StoryDateResponse} from "./types";
 import {DateHelper_convertDate} from "../../../../helpers/DateHelper";
 import {
-    WidgetHelper_getWidgetCssClasses, WidgetHelper_getWidgetId,
+    WidgetHelper_getWidgetCssClasses,
     WidgetHelper_renderEmptyWidget
 } from "../../../../helpers/WidgetHelper";
 const query = gql`
@@ -51,7 +51,7 @@ if (!date) {
 ---
 {toRender ?
     <Fragment set:html={toRender}/> :
-    <div id={WidgetHelper_getWidgetId(widgetConfig)} class={WidgetHelper_getWidgetCssClasses('StoryDate', widgetConfig, context)}>
+    <div class={WidgetHelper_getWidgetCssClasses('StoryDate', widgetConfig, context)}>
         <time datetime={date}>{displayDate}</time>
     </div>
 }

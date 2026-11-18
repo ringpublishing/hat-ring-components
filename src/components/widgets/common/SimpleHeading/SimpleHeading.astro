@@ -1,5 +1,5 @@
 ---
-import { WidgetHelper_getWidgetCssClasses, WidgetHelper_getWidgetId } from "../../../../helpers/WidgetHelper";
+import { WidgetHelper_getWidgetCssClasses } from "../../../../helpers/WidgetHelper";
 import { WidgetHelper_renderEmptyComponent } from "../../../../helpers/WidgetHelper";
 import _ from "lodash";
 
@@ -19,7 +19,7 @@ const Tag = _.get(widgetConfig, "headingTag", "div");
     toRender ? (
         <Fragment set:html={toRender} />
     ) : (
-        <div id={WidgetHelper_getWidgetId(widgetConfig)} class={WidgetHelper_getWidgetCssClasses("SimpleHeading", widgetConfig, context)}>
+        <div class={WidgetHelper_getWidgetCssClasses("SimpleHeading", widgetConfig, context)}>
             <Tag>{headingText}</Tag>
         </div>
     )

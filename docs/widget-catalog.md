@@ -12,7 +12,6 @@ All widgets inherit a common set of parameters from `AbstractWebsitesWidgetConfi
 | `platformDesktop` | checkbox | Render on desktop |
 | `platformMobile` | checkbox | Render on mobile |
 | `customClass` | text | Extra CSS class, also propagated to the wrapper as `gridParent-<class>` |
-| `customId` | text | `id` of the widget root element (e.g. a `#anchor` target); not on Slider / Popup / wrappers, which have their own ids |
 | `customPosition` | select | `none`, `left`, `center`, `right` |
 | `customWidth` | select | `none`, `1` … `12` |
 
@@ -25,7 +24,7 @@ Most content widgets additionally expose `cacheTTL` (seconds).
 | Widget | `widgetType` / module | Purpose | Key parameters |
 |---|---|---|---|
 | **Ring Generic List** | `genericList` / `genericList_wdg` | The main content list — category, topic, search results, or a custom list referenced by UUID | `generalShowOptions` (`items`, `header`, `pagination`, `button`, `infiniteScrollButton`), `showOptions` (`image`, `title`, `taxonomies`, `modificationTime`, `creationTime`, `lead`, `titleAddons`, `authors`), `columns`, `paginationElements`, `postShift`, `perPageAllItems`, `customListUuid`, `imageSize` / `imageSizeMobile`, `imageResizeCropMode`, `preloadImagesCount` (+ mobile), `excludedFlags`, `customTeasers`, `titleAddonsCodeNames`, `mainSeoList`, `additionalComponents`, `useOriginalImage` |
-| **Ring Basic** | `basicWidget` / `basicWidget_wdg` | General-purpose box: renders items from a CMS section **or** static elements defined in configuration | `generalShowOptions` (`sectionElements`, `listElements`, `header`, `description`, `button`), `showOptions` (`title`, `lead`, `image`, `publicationDate`, `modificationDate`, `authors`, `taxonomies`, `titleAddons`), `sectionGroup`, `section_name`, `listElements` (tree object), `count`, `offset`, `countBig`, `columns`, `bigImageSize`, `standardImageSize`, `listElementsImageSize` (+ mobile variants), `additionalOptions: hideWhenNoSectionItems` |
+| **Ring Basic** | `basicWidget` / `basicWidget_wdg` | General-purpose box: renders items from a CMS section **or** static elements defined in configuration | `generalShowOptions` (`sectionElements`, `listElements`, `header`, `description`, `button`), `showOptions` (`title`, `lead`, `image`, `publicationDate`, `modificationDate`, `authors`, `taxonomies`, `titleAddons`), `sectionGroup`, `section_name`, `listElements` (tree object), `count`, `offset`, `countBig`, `columns`, `bigImageSize`, `standardImageSize`, `listElementsImageSize` (+ mobile variants), `additionalOptions: hideWhenNoSectionItems`, `customId` (id of the widget root, e.g. a `#anchor` target; optional, older configs do not have it) |
 | **Topic Title** | `topicTitle` / `topicTitle_wdg` | Title of a topic / tag page | `cacheTTL` |
 | **Topic Description** | `topicDescription` / `topicDescription_wdg` | Description of a topic / tag page | `cacheTTL` |
 

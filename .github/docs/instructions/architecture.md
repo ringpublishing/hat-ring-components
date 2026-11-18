@@ -614,7 +614,6 @@ interface AbstractWidgetConfig {
   platformDesktop?: boolean;                          // Show on desktop?
   platformMobile?: boolean;                           // Show on mobile?
   customClass?: string;                               // Additional CSS classes
-  customId?: string;                                  // id of the widget root element
   customPosition?: 'none' | 'left' | 'center' | 'right';
   customWidth?: 1|2|3|4|5|6|7|8|9|10|11|12;          // Grid column span
   // ... plus widget-specific params defined by each widget's WebsitesConfig

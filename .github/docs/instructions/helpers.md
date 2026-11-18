@@ -187,9 +187,6 @@ WidgetHelper_renderEmptyWidget(widgetConfig, text?)
 WidgetHelper_getWidgetCssClasses(componentName, widgetConfig, context, additionalClasses?)
   // Builds CSS class string: ComponentName + modules + width + position + custom
 
-WidgetHelper_getWidgetId(widgetConfig)
-  // id for the widget root element from customId ("custom CSS ID"), undefined when empty
-
 WidgetHelper_findWidgetConfig(context, objToCompare, containers?, boxes?)
   // Queries CMS for widget configuration matching criteria
 ```
