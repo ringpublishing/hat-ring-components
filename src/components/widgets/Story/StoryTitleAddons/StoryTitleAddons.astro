@@ -6,7 +6,7 @@ import {AppContext} from "../../../../types/types"
 import {StoryTitleAddonsWidgetConfig} from "./types"
 import {StoryTitleAddonsResponse} from "./types"
 import {WebsiteApiProvider} from "../../../../providers/WebsiteApiProvider"
-import {WidgetHelper_getWidgetCssClasses, WidgetHelper_renderEmptyComponent} from "../../../../helpers/WidgetHelper"
+import {WidgetHelper_getWidgetCssClasses, WidgetHelper_getWidgetId, WidgetHelper_renderEmptyComponent} from "../../../../helpers/WidgetHelper"
 
 let toRender: boolean | JSX.Element | string = false
 const titleAddonsCodeNamesArr = _.without((widgetConfig.titleAddonsCodeNames ?? "").split(","), "")
@@ -47,7 +47,7 @@ if (!titleAddonsCodeNamesArr || titleAddonsCodeNamesArr.length === 0) {
                 ""
             )
             return (
-                <div class={WidgetHelper_getWidgetCssClasses("StoryTitleAddons", widgetConfig, context)}>
+                <div id={WidgetHelper_getWidgetId(widgetConfig)} class={WidgetHelper_getWidgetCssClasses("StoryTitleAddons", widgetConfig, context)}>
                     <span class={`title-addons code-${codeName}`}>{storyTitleAddonsToShow}</span>
                 </div>
             )

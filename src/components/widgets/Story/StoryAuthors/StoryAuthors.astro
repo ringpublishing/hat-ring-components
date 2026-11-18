@@ -6,7 +6,7 @@ import _ from 'lodash';
 import {gql} from 'graphql-tag';
 import {StoryAuthorsParams, StoryAuthorsResponse, StoryAuthorsShowOptions} from "./types";
 import {WebsiteApiProvider} from "../../../../providers/WebsiteApiProvider";
-import {WidgetHelper_getWidgetCssClasses} from "../../../../helpers/WidgetHelper";
+import {WidgetHelper_getWidgetCssClasses, WidgetHelper_getWidgetId} from "../../../../helpers/WidgetHelper";
 import {ImageHelper_getImageDimensionsFromObject} from "../../../../helpers/ImageHelper";
 import {Author} from "@ringpublishing/graphql-api-client-got/dist/types/websites-api";
 import {default as StoryAuthor} from "./StoryAuthor.astro";
@@ -50,7 +50,7 @@ let cssModules = styles.StoryAuthors;
 ---
 
 
-<div class={WidgetHelper_getWidgetCssClasses('StoryAuthors', widgetConfig, context, [cssModules])}>
+<div id={WidgetHelper_getWidgetId(widgetConfig)} class={WidgetHelper_getWidgetCssClasses('StoryAuthors', widgetConfig, context, [cssModules])}>
     {authors.map(author => {
         return (
             <StoryAuthor author={author} context={context} widgetConfig={widgetConfig}/>

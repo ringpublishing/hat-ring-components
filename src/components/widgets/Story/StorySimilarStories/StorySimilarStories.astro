@@ -2,7 +2,7 @@
 const {widgetConfig, context} = Astro.props;
 
 import {StorySimilarStoriesWidgetConfig} from "./types";
-import {WidgetHelper_getWidgetCssClasses, WidgetHelper_renderEmptyWidget} from "../../../../helpers/WidgetHelper";
+import {WidgetHelper_getWidgetCssClasses, WidgetHelper_getWidgetId, WidgetHelper_renderEmptyWidget} from "../../../../helpers/WidgetHelper";
 import {StorySimilarStories_getData} from "./StorySimilarStoriesGetData";
 import {Header, Items} from "../../Lists/GenericList/generalParts";
 import {GenericListWidgetConfig} from "../../Lists/GenericList/types";
@@ -20,7 +20,7 @@ if (ifStoriesExists.length === 0) {
 
 ---
 {toRender ? <Fragment set:html={toRender}/> :
-    <div class={WidgetHelper_getWidgetCssClasses('StorySimilarStories', widgetConfig, context, [])}>
+    <div id={WidgetHelper_getWidgetId(widgetConfig)} class={WidgetHelper_getWidgetCssClasses('StorySimilarStories', widgetConfig, context, [])}>
         <Header widgetConfig={widgetConfig as GenericListWidgetConfig} context={context} response={data}/>
         <Items widgetConfig={widgetConfig as GenericListWidgetConfig} context={context} response={data}
                extendableAttributes={{}}/>

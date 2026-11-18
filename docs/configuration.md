@@ -61,6 +61,7 @@ From `AbstractWebsitesWidgetConfigParamsDescription` — present on every widget
 | `platformDesktop` | checkbox | `true` | Render on desktop |
 | `platformMobile` | checkbox | `true` | Render on mobile |
 | `customClass` | textfield | `""` | Extra CSS class |
+| `customId` | textfield | `""` | `id` of the widget root element, e.g. the target of a `#anchor` link |
 | `customPosition` | select | `none` | `none`, `left`, `center`, `right` |
 | `customWidth` | select | `none` | `none`, `1` … `12` |
 

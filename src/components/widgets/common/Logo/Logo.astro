@@ -1,5 +1,5 @@
 ---
-import {WidgetHelper_getWidgetCssClasses} from "../../../../helpers/WidgetHelper";
+import {WidgetHelper_getWidgetCssClasses, WidgetHelper_getWidgetId} from "../../../../helpers/WidgetHelper";
 import RingLink from "../../../common/RingLink.astro";
 import RingImage from "../../../common/RingImage.astro";
 import {TransformType} from "../../../../helpers/AcceleratorImagesHelper";
@@ -16,7 +16,7 @@ const logoTitle = widgetConfig.overrideTitle || '';
 // TODO: Get service homepage url from general config
 const logoHref = widgetConfig.overrideLink || '/';
 ---
-<div class={WidgetHelper_getWidgetCssClasses('Logo', widgetConfig, context, [styles.Logo])}>
+<div id={WidgetHelper_getWidgetId(widgetConfig)} class={WidgetHelper_getWidgetCssClasses('Logo', widgetConfig, context, [styles.Logo])}>
     {logoSrc && (
         <RingLink context={context} href={logoHref} title={logoTitle}>
             <RingImage

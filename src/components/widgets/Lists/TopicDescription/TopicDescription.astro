@@ -4,7 +4,7 @@ const { widgetConfig, context } = Astro.props as {
     context: AppContext;
 };
 import _ from "lodash";
-import { WidgetHelper_getWidgetCssClasses, WidgetHelper_renderEmptyComponent } from "../../../../helpers/WidgetHelper";
+import { WidgetHelper_getWidgetCssClasses, WidgetHelper_getWidgetId, WidgetHelper_renderEmptyComponent } from "../../../../helpers/WidgetHelper";
 import { TopicDescriptionWidgetConfig, TopicDescriptionResponse } from "./types";
 import { gql } from "graphql-tag";
 import { WebsiteApiProvider } from "../../../../providers/WebsiteApiProvider";
@@ -53,7 +53,7 @@ if (!content) {
     toRender ? (
         <Fragment set:html={toRender} />
     ) : (
-        <div class={WidgetHelper_getWidgetCssClasses("TopicDescription", widgetConfig, context)}>
+        <div id={WidgetHelper_getWidgetId(widgetConfig)} class={WidgetHelper_getWidgetCssClasses("TopicDescription", widgetConfig, context)}>
             <StoryContentSwitcher
                 content={content}
                 widgetConfig={widgetConfig}

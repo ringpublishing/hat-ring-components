@@ -12,6 +12,7 @@ All widgets inherit a common set of parameters from `AbstractWebsitesWidgetConfi
 | `platformDesktop` | checkbox | Render on desktop |
 | `platformMobile` | checkbox | Render on mobile |
 | `customClass` | text | Extra CSS class, also propagated to the wrapper as `gridParent-<class>` |
+| `customId` | text | `id` of the widget root element (e.g. a `#anchor` target); not on Slider / Popup / wrappers, which have their own ids |
 | `customPosition` | select | `none`, `left`, `center`, `right` |
 | `customWidth` | select | `none`, `1` … `12` |
 

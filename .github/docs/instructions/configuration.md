@@ -114,7 +114,7 @@ export let MyWidgetWebsitesConfig = {
 
 ### AbstractWebsitesWidgetConfigDefaultParams includes:
 - platformDesktop: true, platformMobile: true
-- customClass: "", customPosition: "none", customWidth: "none"
+- customClass: "", customId: "", customPosition: "none", customWidth: "none"
 
 ### Param types:
 - `textfield` — Free text input

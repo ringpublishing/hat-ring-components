@@ -63,6 +63,14 @@ export function WidgetHelper_getWidgetCssClasses(componentName: string, widgetCo
     return [...additionalCssClasses, ...cssClasses].join(' ');
 }
 
+/**
+ * Value of the widget "custom CSS ID" field for the id attribute of the widget root element, undefined when empty.
+ */
+export function WidgetHelper_getWidgetId(widgetConfig?: AbstractWidgetConfig): string | undefined {
+    const id = typeof widgetConfig?.customId === 'string' ? widgetConfig.customId.trim() : '';
+    return id !== '' ? id : undefined;
+}
+
 export async function WidgetHelper_findWidgetConfig(context: AppContext, objToCompare, containers: string[], boxes: string[] = ['box_top', 'box_left', 'box_middle', 'box_right', 'box_bottom']): Promise<any> {
     return new Promise(async (resolve, reject) => {
         const variant = context.websiteManagerVariant;

@@ -2,7 +2,7 @@
 import { AppContext } from "../../../../types/types";
 import { AbstractWidgetConfig } from "../../../../types/types";
 import {
-    WidgetHelper_getWidgetCssClasses,
+    WidgetHelper_getWidgetCssClasses, WidgetHelper_getWidgetId,
     WidgetHelper_renderEmptyWidget,
     WidgetHelper_shouldHideWidget,
 } from "../../../../helpers/WidgetHelper";
@@ -30,7 +30,7 @@ const headingSelector = widgetConfig?.headingSelector || "h2";
 {toRender ? (
     <Fragment set:html={toRender} />
 ) : (
-    <section class={WidgetHelper_getWidgetCssClasses("StoryTableOfContents", widgetConfig, context)}>
+    <section id={WidgetHelper_getWidgetId(widgetConfig)} class={WidgetHelper_getWidgetCssClasses("StoryTableOfContents", widgetConfig, context)}>
         <h3 class="TocTitle">{tocTitle}</h3>
         <nav role="navigation">
             <ol class="TocList" data-content-selector={contentSelector} data-heading-selector={headingSelector}></ol>

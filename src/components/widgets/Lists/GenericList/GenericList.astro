@@ -5,7 +5,7 @@ const {context, widgetConfig, extendableAttributes} = Astro.props;
 import React from 'react';
 import _ from 'lodash';
 import {GenericListResponse} from "./types";
-import {WidgetHelper_getWidgetCssClasses, WidgetHelper_renderEmptyComponent} from "../../../../helpers/WidgetHelper";
+import {WidgetHelper_getWidgetCssClasses, WidgetHelper_getWidgetId, WidgetHelper_renderEmptyComponent} from "../../../../helpers/WidgetHelper";
 
 import styles from "../../../../../styles/widgets/Lists/GenericList.module.scss";
 import {
@@ -44,7 +44,7 @@ let cssModules = styles.GenericList;
 
 {toRender ?
     <Fragment set:html={toRender}/> :
-    <div class={WidgetHelper_getWidgetCssClasses('GenericList', widgetConfig, context, [cssModules])}>
+    <div id={WidgetHelper_getWidgetId(widgetConfig)} class={WidgetHelper_getWidgetCssClasses('GenericList', widgetConfig, context, [cssModules])}>
         {widgetConfig.generalShowOptions && widgetConfig.generalShowOptions.map((showOption, index) => {
             const Component = allGeneralParts[_.upperFirst(showOption)];
             if (!Component) {

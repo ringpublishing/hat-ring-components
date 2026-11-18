@@ -57,6 +57,7 @@ export interface AbstractWidgetConfig {
     readonly platformDesktop?: boolean,
     readonly platformMobile?: boolean,
     readonly customClass?: string,
+    readonly customId?: string,
     readonly customPosition?: 'none' | 'left' | 'center' | 'right',
     readonly customWidth?: 'none' | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12,
 }

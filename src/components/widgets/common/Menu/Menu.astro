@@ -1,6 +1,6 @@
 ---
 import _ from 'lodash';
-import {WidgetHelper_getWidgetCssClasses} from "../../../../helpers/WidgetHelper";
+import {WidgetHelper_getWidgetCssClasses, WidgetHelper_getWidgetId} from "../../../../helpers/WidgetHelper";
 import {ImageHelper_getImageDimensionsFromObject} from "../../../../helpers/ImageHelper";
 import {TransformType} from "../../../../helpers/AcceleratorImagesHelper";
 import styles from "../../../../../styles/widgets/common/Menu.module.scss";
@@ -30,7 +30,7 @@ interface MenuParams extends WidgetParams {
 
 const {widgetConfig, context} = Astro.props as { widgetConfig: MenuConfig, context: AppContext };
 ---
-<div class={WidgetHelper_getWidgetCssClasses('Menu', widgetConfig, context, [styles.Menu])}>
+<div id={WidgetHelper_getWidgetId(widgetConfig)} class={WidgetHelper_getWidgetCssClasses('Menu', widgetConfig, context, [styles.Menu])}>
     <ul>
         {(() => {
             const currentUrl = _.get(context, 'hatControllerParams.urlWithParsedQuery.pathname') || (context as any).url;

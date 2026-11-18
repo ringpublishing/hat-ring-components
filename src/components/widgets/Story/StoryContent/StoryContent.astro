@@ -1,7 +1,7 @@
 ---
 const {context, widgetConfig, extendableAttributes} = Astro.props;
 import {default as StoryContentSwitcher} from "./StoryContentSwitcher.astro";
-import {WidgetHelper_getWidgetCssClasses} from "../../../../helpers/WidgetHelper";
+import {WidgetHelper_getWidgetCssClasses, WidgetHelper_getWidgetId} from "../../../../helpers/WidgetHelper";
 import {StoryContent_getData} from "./StoryContentGetData";
 import _ from 'lodash';
 import styles from "../../../../../styles/widgets/Story/StoryContent.module.scss";
@@ -12,7 +12,7 @@ const flags = _.get(response, 'data.story.flags', []).map(flag => `flag_${flag.c
 ---
 
 
-<div class={WidgetHelper_getWidgetCssClasses('StoryContent', widgetConfig, context, [...flags, styles.StoryContent])}>
+<div id={WidgetHelper_getWidgetId(widgetConfig)} class={WidgetHelper_getWidgetCssClasses('StoryContent', widgetConfig, context, [...flags, styles.StoryContent])}>
     <StoryContentSwitcher content={content} widgetConfig={widgetConfig} context={context}
                           extendableAttributes={extendableAttributes}/>
 </div>

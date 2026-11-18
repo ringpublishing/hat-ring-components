@@ -7,7 +7,7 @@ import _ from 'lodash';
 import {gql} from 'graphql-tag';
 import {WebsiteApiProvider} from "../../../../providers/WebsiteApiProvider";
 import {StoryTitleResponse} from "./types";
-import {WidgetHelper_getWidgetCssClasses, WidgetHelper_renderEmptyComponent} from "../../../../helpers/WidgetHelper";
+import {WidgetHelper_getWidgetCssClasses, WidgetHelper_getWidgetId, WidgetHelper_renderEmptyComponent} from "../../../../helpers/WidgetHelper";
 import {ConfigHelper_getDeveloperSettingsConfig} from "../../../../helpers/ConfigHelper";
 import {UtilsHelper_getCurrentPageType} from "../../../../helpers/UtilsHelper";
 
@@ -61,7 +61,7 @@ if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tagName)) {
 {toRender ?
     <Fragment set:html={toRender}/>
     :
-    <div class={WidgetHelper_getWidgetCssClasses('StoryTitle', widgetConfig, context)}>
+    <div id={WidgetHelper_getWidgetId(widgetConfig)} class={WidgetHelper_getWidgetCssClasses('StoryTitle', widgetConfig, context)}>
         <Tag>{title}</Tag>
     </div>
 }

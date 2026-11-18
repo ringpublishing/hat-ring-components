@@ -7,7 +7,7 @@ import {
 } from "../../../../types/types";
 import {Breadcrumb, BreadcrumbEntry} from "./types";
 import {
-    WidgetHelper_getWidgetCssClasses,
+    WidgetHelper_getWidgetCssClasses, WidgetHelper_getWidgetId,
     WidgetHelper_renderEmptyComponent,
 } from "../../../../helpers/WidgetHelper";
 const {context, widgetConfig} = Astro.props as {
@@ -63,6 +63,7 @@ const createBreadcrumb = (breadcrumbs: Breadcrumb[]): BreadcrumbEntry[] => {
     <Fragment set:html={toRender}/>
         ) : (
     <div
+            id={WidgetHelper_getWidgetId(widgetConfig)}
             class={WidgetHelper_getWidgetCssClasses(
                 "Breadcrumb",
                 widgetConfig,

@@ -42,6 +42,7 @@ The `widgetConfig` is a CMS-defined object that extends `AbstractWidgetConfig`. 
 | `platformDesktop` | `boolean` | Whether the widget renders on desktop |
 | `platformMobile` | `boolean` | Whether the widget renders on mobile |
 | `customClass` | `string` | Additional CSS class(es) from CMS admin |
+| `customId` | `string` | `id` of the widget root element from CMS admin (e.g. a `#anchor` target) |
 | `customPosition` | `"none" \| "left" \| "center" \| "right"` | Alignment override |
 | `customWidth` | `number` (1–12) | Grid column span (12-column grid system) |
 
@@ -64,7 +65,7 @@ Every widget follows a consistent five-phase lifecycle:
 ### Phase 1: IMPORT
 
 ```typescript
-import { WidgetHelper_shouldHideWidget, WidgetHelper_renderEmptyWidget, WidgetHelper_getWidgetCssClasses } from "hat-ring-components";
+import { WidgetHelper_shouldHideWidget, WidgetHelper_renderEmptyWidget, WidgetHelper_getWidgetCssClasses, WidgetHelper_getWidgetId } from "hat-ring-components";
 import type { AppContext } from "hat-ring-components";
 import type { MyWidgetConfig } from "./types";
 ```
@@ -100,12 +101,13 @@ Transform raw API data into the shape the template needs. Apply filtering, sorti
 ### Phase 5: RENDER
 
 ```astro
-<div class={WidgetHelper_getWidgetCssClasses("MyWidget", widgetConfig, context)}>
+<div id={WidgetHelper_getWidgetId(widgetConfig)} class={WidgetHelper_getWidgetCssClasses("MyWidget", widgetConfig, context)}>
   <!-- widget HTML -->
 </div>
 ```
 
-Always use `WidgetHelper_getWidgetCssClasses` for the widget's root element to ensure consistent class naming.
+Always use `WidgetHelper_getWidgetCssClasses` for the widget's root element to ensure consistent class naming, and
+`WidgetHelper_getWidgetId` for its `id` (the CMS "custom CSS ID", e.g. a `#anchor` target; no attribute when empty).
 
 ---
 
@@ -175,6 +177,11 @@ const classes = WidgetHelper_getWidgetCssClasses("MyWidget", widgetConfig, conte
 ```
 
 **Always use this function** for the root element of every widget. It ensures consistent class naming and CMS-driven styling.
+
+### `WidgetHelper_getWidgetId(widgetConfig)`
+
+Returns `widgetConfig.customId` (trimmed) for the `id` attribute of the widget root element, or `undefined` when empty, so
+no attribute is rendered. Widgets that need their own `id` (Slider, Popup, wrapper start) do not use it.
 
 ---
 
