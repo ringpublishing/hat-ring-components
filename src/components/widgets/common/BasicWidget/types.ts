@@ -27,6 +27,7 @@ export enum BasicWidgetAdditionalOptions {
 }
 
 export interface BasicWidgetConfig extends AbstractWidgetConfig {
+    customId?: string,
     generalShowOptions?: Array<BasicWidgetGeneralShowOptions>,
     showOptions?: Array<BasicWidgetShowOptions>,
     sectionGroup?: string,

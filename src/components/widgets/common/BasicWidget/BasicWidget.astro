@@ -42,13 +42,16 @@ if (!toRender) {
 }
 
 let cssModules = styles.BasicWidget;
+
+// "Custom CSS ID": id of the widget root (e.g. a #anchor target). Configs saved before this field existed do not have it.
+const customId = typeof widgetConfig?.customId === "string" && widgetConfig.customId.trim() !== "" ? widgetConfig.customId.trim() : undefined;
 ---
 
 {
     toRender ? (
         <Fragment set:html={toRender}/>
     ) : (
-        <div class={WidgetHelper_getWidgetCssClasses("BasicWidget", widgetConfig, context, [cssModules])}>
+        <div id={customId} class={WidgetHelper_getWidgetCssClasses("BasicWidget", widgetConfig, context, [cssModules])}>
             {widgetConfig.generalShowOptions &&
                 widgetConfig.generalShowOptions.map((showOption, index) => {
                     const Component = allGeneralParts[_.upperFirst(showOption)];

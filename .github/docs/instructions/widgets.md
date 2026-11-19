@@ -251,6 +251,12 @@ BasicWidget/
 6. Each generalPart iterates edges and renders itemParts per widgetConfig.showOptions
 ```
 
+### `customId`
+
+"Custom CSS ID" (BasicWidget only): rendered as the `id` of the widget root element, e.g. the target of a `#anchor`
+link in a menu (same field as in Universal Template). It is optional: configurations saved before the field existed
+do not have it, so the template renders no `id` when it is missing, empty or not a string.
+
 ### `generalShowOptions`
 
 An array that controls which layout-level sections render. Values map directly to GeneralParts components:

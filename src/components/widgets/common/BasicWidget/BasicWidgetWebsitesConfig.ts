@@ -13,6 +13,7 @@ export let BasicWidgetWebsitesConfig = {
             "description": "",
             "defaultParams": {
                 ...AbstractWebsitesWidgetConfigDefaultParams,
+                "customId": "",
                 "generalShowOptions": ["sectionElements"],
                 "showOptions": ["image", "title", "publicationDate", "lead"],
                 "additionalOptions": [],
@@ -45,6 +46,11 @@ export let BasicWidgetWebsitesConfig = {
             },
             "paramsDescription": {
                 ...AbstractWebsitesWidgetConfigParamsDescription,
+                "customId": {
+                    "name": "Custom CSS ID",
+                    "description": "id of the widget element, e.g. the target of a #anchor link",
+                    "type": "textfield"
+                },
                 "generalShowOptions": {
                     "name": "Widget elements to display",
                     "description": "",
