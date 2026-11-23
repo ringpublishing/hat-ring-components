@@ -272,12 +272,13 @@ SEO title and description generation with configurable template patterns.
 
 ## 13. Creating Project Helpers
 
-Projects can create their own helpers following the static class pattern.
+Projects can create their own helpers following the naming of the framework helpers.
 
 ### Convention
 
 - Place in `src/helpers/YourProjectHelper.ts`
-- Use a static class with descriptive method names
+- Export functions named `<HelperFile>_<verb><What>` (e.g. `YourProjectHelper_getCustomData`), like `CacheHelper_set` or `UtilsHelper_getDomain`
+- A separate function only when it has more than one caller or the helper already exists; code used once stays inline
 - Integrate with `CacheHelper` for any data that benefits from caching
 - Use cache tags for bulk invalidation of related entries
 
@@ -285,17 +286,15 @@ Projects can create their own helpers following the static class pattern.
 
 ```typescript
 // src/helpers/YourProjectHelper.ts
-export class YourProjectHelper {
-    static async getCustomData(): Promise<any> {
-        const cacheKey = JSON.stringify({ type: 'custom-data' });
-        let cached = await CacheHelper_get(cacheKey);
-        if (cached) return cached;
+export async function YourProjectHelper_getCustomData(): Promise<any> {
+    const cacheKey = JSON.stringify({ type: 'custom-data' });
+    let cached = await CacheHelper_get(cacheKey);
+    if (cached) return cached;
 
-        // fetch data...
+    // fetch data...
 
-        await CacheHelper_set(cacheKey, data, 3600, ['custom']);
-        return data;
-    }
+    await CacheHelper_set(cacheKey, data, 3600, ['custom']);
+    return data;
 }
 ```
 

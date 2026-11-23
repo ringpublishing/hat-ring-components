@@ -191,16 +191,14 @@ your-project/
 // src/helpers/YourHelper.ts
 import { CacheHelper_get, CacheHelper_set } from "hat-ring-components";
 
-export class YourHelper {
-    static async fetchData(): Promise<any> {
-        const key = JSON.stringify({ type: 'your-data' });
-        const cached = await CacheHelper_get(key);
-        if (cached) return cached;
+export async function YourHelper_getData(): Promise<any> {
+    const key = JSON.stringify({ type: 'your-data' });
+    const cached = await CacheHelper_get(key);
+    if (cached) return cached;
 
-        const data = /* fetch from API */;
-        await CacheHelper_set(key, data, 3600, ['your-tag']);
-        return data;
-    }
+    const data = /* fetch from API */;
+    await CacheHelper_set(key, data, 3600, ['your-tag']);
+    return data;
 }
 ```
 
@@ -280,7 +278,7 @@ When you need to add or change something that applies to **all HAT projects**, e
 
 1. **Widget registration** — All widgets in `widgets.ts`, all slots in `slots` export
 2. **CSS Modules** — Use `.module.scss`, inject via `cssModules.ts`
-3. **Helper naming** — Static class pattern: `YourHelper.methodName()`
+3. **Helper naming** — Exported functions named like the framework: `<HelperFile>_<verb><What>` (e.g. `CacheHelper_set`, `UtilsHelper_getDomain`, `YourHelper_getData` in `src/helpers/YourHelper.ts`); the name says what the function returns or does, without abbreviations. Existing names are not renamed outside the task.
 4. **Cache keys** — Always `JSON.stringify()` for consistency
 5. **Widget lifecycle** — Always validate → fetch → process → render
 6. **Empty widgets** — Return `WidgetHelper_renderEmptyWidget()`, never `null`
@@ -288,6 +286,7 @@ When you need to add or change something that applies to **all HAT projects**, e
 8. **Dates** — Use `DateHelper_convertDate` or `DateHelper_fromNow` with project template
 9. **Config** — Use `ConfigHelper_getGeneralConfig(context)` for site settings
 10. **Breakpoints** — Mobile-first: base = mobile, `@media (min-width: $breakpoint-md)` for tablet+
+11. **No unnecessary splitting into functions** — Add a separate function only when it is used in more than one place or the project or framework already has the same helper; code used once stays inline in the function that needs it. Do not split moved or existing code into smaller one-use functions, and after removing or moving code inline functions left with one caller and drop exports used only in their own file.
 
 ---
 
