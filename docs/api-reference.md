@@ -122,6 +122,7 @@ const finalMetadata = await SeoMetaDecoratorRobots(context, metadata);
 | `StoryHelper_getGqlContentFragment` | The GraphQL fragment for article content |
 | `StoryHelper_getGroupContent(blocks, groupName)` | Extracts one named group of blocks |
 | `StoryHelper_getStoryFlags` / `SeoHelper_checkStoryHiddenFlag` | Editorial flags |
+| `StoryHelper_isPreview` | Whether the story is a Websites API preview (`story.publication.preview`); preview stories get `noindex, nofollow` |
 | `Author_getData` / `authorGqlFragment` | Author data and its GraphQL fragment |
 | `AdditionalComponentHelper_insertComponentAtPattern` | Pattern-based insertion into a list of elements |
 | `LinkReplacerHelper_replaceLinks` | Applies link replacer rules from Developer settings |

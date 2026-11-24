@@ -323,6 +323,29 @@ export async function SeoHelper_checkStoryHiddenFlag(context) {
     return isHiddenFlag
 }
 
+/**
+ * True when the current story is a Websites API preview (story.publication.preview), i.e. an unpublished
+ * snapshot that must not be indexed. Kept as a separate query from the flags one, so an error here
+ * (WebsiteApiProvider.call returns null) cannot hide the "hidden" flag.
+ */
+export async function StoryHelper_isPreview(context: AppContext): Promise<boolean> {
+    if (!context?.id) {
+        return false;
+    }
+    const query = gql`
+        query ($storyId: UUID) {
+            story(id: $storyId) {
+                publication {
+                    preview
+                }
+            }
+        }
+    `;
+    const response = await WebsiteApiProvider.call(query, {storyId: context.id});
+
+    return Boolean(response?.data?.story?.publication?.preview);
+}
+
 export async function StoryHelper_getStoryFlags(context: AppContext): Promise<{ code: string }[]> {
     const query = gql`
         query ($storyId: UUID) {

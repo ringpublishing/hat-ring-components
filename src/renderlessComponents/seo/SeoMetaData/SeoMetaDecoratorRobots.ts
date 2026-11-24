@@ -1,6 +1,6 @@
 import React from "react"
 import {AppContext, SiteContentType} from "../../../types/types"
-import {SeoHelper_checkStoryHiddenFlag} from "../../../helpers/StoryHelper"
+import {SeoHelper_checkStoryHiddenFlag, StoryHelper_isPreview} from "../../../helpers/StoryHelper"
 import {UtilsHelper_getCurrentPageType} from "../../../helpers/UtilsHelper";
 
 const removeNoIndexNoFollow = (metaTags) => {
@@ -32,8 +32,11 @@ export async function SeoMetaDecoratorRobots(context: AppContext, generatedMetaT
 
     if (customMetaRobotsTags.length > 0) {
         if (UtilsHelper_getCurrentPageType(context) === SiteContentType.Story) {
-            const isHiddenFlag = await SeoHelper_checkStoryHiddenFlag(context)
-            if (isHiddenFlag) {
+            const [isHiddenFlag, isPreview] = await Promise.all([
+                SeoHelper_checkStoryHiddenFlag(context),
+                StoryHelper_isPreview(context),
+            ])
+            if (isHiddenFlag || isPreview) {
                 generatedMetaTags.nofollow = true
                 generatedMetaTags.noindex = true
                 generatedMetaTags.extend.meta = removeNoIndexNoFollow(generatedMetaTags.extend.meta)
