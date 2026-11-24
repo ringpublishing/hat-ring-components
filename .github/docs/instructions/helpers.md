@@ -150,7 +150,17 @@ StoryHelper_getGqlContentFragment()
 
 StoryHelper_getStoryFlags(context)
   // Fetches story flags (e.g., "hidden", "showupdated")
+
+StoryHelper_getStoryFlagsAndPreview(context)
+  // { flags, isPreview } of the story, one Websites API query
+
+StoryHelper_isPreview(context)
+  // Story page showing a preview (story.publication.preview)
 ```
+
+**Story flags and preview:**
+
+`StoryHelper_getStoryFlagsAndPreview` asks for `story.flags` and `story.publication.preview` in one query. `SeoMetaRobots`, `SeoMetaDecoratorRobots` and `StoryHelper_isPreview` use it, so on a story page they share one cached Websites API call. Preview stories (like hidden ones) get `<meta name="robots" content="noindex, nofollow">`.
 
 **Block → HTML mapping:**
 
@@ -211,13 +221,7 @@ UtilsHelper_isMobile(context)              // Device detection from hatControlle
 UtilsHelper_isDevelopmentMode()            // Check NODE_ENV !== 'production'
 UtilsHelper_getUrlParts(url)              // Parse URL into components
 UtilsHelper_convertToType(value, type)    // Type conversion utility
-UtilsHelper_getStoryFlagsAndPreview(context) // { flags, isPreview } of the story, one Websites API query
-UtilsHelper_isPreview(context)            // Story page showing a preview (story.publication.preview)
 ```
-
-**Story flags and preview:**
-
-`UtilsHelper_getStoryFlagsAndPreview` asks for `story.flags` and `story.publication.preview` in one query. `SeoMetaRobots`, `SeoMetaDecoratorRobots` and `UtilsHelper_isPreview` use it, so on a story page they share one cached Websites API call. Preview stories (like hidden ones) get `<meta name="robots" content="noindex, nofollow">`.
 
 **Device detection:**
 

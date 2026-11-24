@@ -68,7 +68,7 @@ When auditing a HAT project's SEO, check all of these:
 
 ### Robots Directives
 - [ ] Hidden stories have `<meta name="robots" content="noindex, nofollow">` (via SeoHelper_checkStoryHiddenFlag)
-- [ ] Preview stories (`story.publication.preview`) have `<meta name="robots" content="noindex, nofollow">` (via UtilsHelper_isPreview)
+- [ ] Preview stories (`story.publication.preview`) have `<meta name="robots" content="noindex, nofollow">` (via StoryHelper_isPreview)
 - [ ] Pagination pages beyond threshold: consider noindex
 - [ ] Admin/utility pages: noindex, nofollow
 - [ ] Search pages: noindex (to prevent duplicate content)
@@ -126,7 +126,7 @@ When auditing a HAT project's SEO, check all of these:
 5. Inject into SafeHead from Layout.astro
 
 ### Adding robots noindex
-1. For specific content: use story flags (SeoHelper_checkStoryHiddenFlag) or preview state (UtilsHelper_isPreview)
+1. For specific content: use story flags (SeoHelper_checkStoryHiddenFlag) or preview state (StoryHelper_isPreview)
 2. For page types: add condition in Layout.astro based on siteContentType
 3. For URL patterns: add in middleware (earlyReturnRules or custom logic)
 

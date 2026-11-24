@@ -3,7 +3,7 @@ import {AppContext, SiteContentType} from "../../../types/types";
 import {ConfigHelper_getMetaDataConfig} from "../../../helpers/ConfigHelper";
 import {gql} from "graphql-tag";
 import {WebsiteApiProvider} from "../../../providers/WebsiteApiProvider";
-import { UtilsHelper_getStoryFlagsAndPreview } from "../../../helpers/UtilsHelper"
+import { StoryHelper_getStoryFlagsAndPreview } from "../../../helpers/StoryHelper"
 
 export async function SeoMetaRobots(context: AppContext) {
     const actualPageType = context.siteContentType;
@@ -11,7 +11,7 @@ export async function SeoMetaRobots(context: AppContext) {
     let isHiddenOrPreview = false;
 
     if (actualPageType === SiteContentType.Story) {
-       const {flags, isPreview} = await UtilsHelper_getStoryFlagsAndPreview(context)
+       const {flags, isPreview} = await StoryHelper_getStoryFlagsAndPreview(context)
        isHiddenOrPreview = isPreview || flags.some((flag) => flag.code === "hidden")
     }
 
