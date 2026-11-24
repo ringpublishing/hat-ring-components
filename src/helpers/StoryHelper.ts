@@ -1,9 +1,7 @@
 import {ContentBlock, Story} from "@ringpublishing/graphql-api-client-got/dist/types/websites-api";
 import * as convert from "xml-js";
 import _ from "lodash";
-import {UtilsHelper_ensureHttps} from "./UtilsHelper";
-import { WebsiteApiProvider } from "../providers/WebsiteApiProvider";
-import { gql } from "@ringpublishing/graphql-api-client-got";
+import {UtilsHelper_ensureHttps, UtilsHelper_getStoryFlagsAndPreview} from "./UtilsHelper";
 import { AppContext } from "../types/types";
 import {ImageHelper_getImageMetaData} from "./ImageHelper";
 import {LogHelper_debug} from "./LogHelper";
@@ -301,68 +299,11 @@ export function StoryHelper_getGroupContent(storyContentBlocks, groupType: strin
 
 }
 export async function SeoHelper_checkStoryHiddenFlag(context) {
-    const query = gql`
-        query ($storyId: UUID) {
-            story(id: $storyId) {
-                flags {
-                    code
-                }
-            }
-        }
-    `
+    const {flags} = await UtilsHelper_getStoryFlagsAndPreview(context);
 
-    const variables = {
-        storyId: context.id,
-    }
-    const response = await WebsiteApiProvider.call(query, variables)
-
-    let isHiddenFlag =
-        response?.data?.story?.flags?.some((flag: {code: string}) => {
-            return flag.code === "hidden"
-        }) || false
-    return isHiddenFlag
-}
-
-/**
- * True when the current story is a Websites API preview (story.publication.preview), i.e. an unpublished
- * snapshot that must not be indexed. Kept as a separate query from the flags one, so an error here
- * (WebsiteApiProvider.call returns null) cannot hide the "hidden" flag.
- */
-export async function StoryHelper_isPreview(context: AppContext): Promise<boolean> {
-    if (!context?.id) {
-        return false;
-    }
-    const query = gql`
-        query ($storyId: UUID) {
-            story(id: $storyId) {
-                publication {
-                    preview
-                }
-            }
-        }
-    `;
-    const response = await WebsiteApiProvider.call(query, {storyId: context.id});
-
-    return Boolean(response?.data?.story?.publication?.preview);
+    return flags.some((flag) => flag.code === "hidden");
 }
 
 export async function StoryHelper_getStoryFlags(context: AppContext): Promise<{ code: string }[]> {
-    const query = gql`
-        query ($storyId: UUID) {
-            story(id: $storyId) {
-                flags {
-                    code
-                }
-            }
-        }
-    `;
-    const variables = {
-        storyId: context?.id,
-    };
-    if(!variables.storyId) {
-        return [];
-    }
-    const response = await WebsiteApiProvider.call(query, variables)
-
-    return response?.data?.story?.flags || [];
+    return (await UtilsHelper_getStoryFlagsAndPreview(context)).flags;
 }

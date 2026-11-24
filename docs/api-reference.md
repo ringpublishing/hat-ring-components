@@ -121,8 +121,7 @@ const finalMetadata = await SeoMetaDecoratorRobots(context, metadata);
 | `StoryHelper_getLeadBlock` | Extracts the lead paragraph |
 | `StoryHelper_getGqlContentFragment` | The GraphQL fragment for article content |
 | `StoryHelper_getGroupContent(blocks, groupName)` | Extracts one named group of blocks |
-| `StoryHelper_getStoryFlags` / `SeoHelper_checkStoryHiddenFlag` | Editorial flags |
-| `StoryHelper_isPreview` | Whether the story is a Websites API preview (`story.publication.preview`); preview stories get `noindex, nofollow` |
+| `StoryHelper_getStoryFlags` / `SeoHelper_checkStoryHiddenFlag` | Editorial flags (read from `UtilsHelper_getStoryFlagsAndPreview`) |
 | `Author_getData` / `authorGqlFragment` | Author data and its GraphQL fragment |
 | `AdditionalComponentHelper_insertComponentAtPattern` | Pattern-based insertion into a list of elements |
 | `LinkReplacerHelper_replaceLinks` | Applies link replacer rules from Developer settings |
@@ -158,7 +157,14 @@ const finalMetadata = await SeoMetaDecoratorRobots(context, metadata);
 `isHomepage`, `getCurrentPageType`, `getCurrentNodeName`, `getCurrentNodeCategoryId`,
 `getQueryParam`, `getSearchQueryParamKey`, `isMobile`, `isDevelopmentMode`, `convertToInt`,
 `parsePositiveIntFromString`, `getValueIfExists`, `getExtension`, `generateRandomString`,
-`stripHtmlTags`, `slugify`, `getErrorMessage`, `asyncSequentialForEach`, `asyncParallelForEach`.
+`stripHtmlTags`, `slugify`, `getErrorMessage`, `asyncSequentialForEach`, `asyncParallelForEach`,
+`getStoryFlagsAndPreview`, `isPreview`.
+
+`UtilsHelper_getStoryFlagsAndPreview(context)` returns `{ flags, isPreview }` of the context story from one
+Websites API query (`story.flags` + `story.publication.preview`). `SeoHelper_checkStoryHiddenFlag`,
+`StoryHelper_getStoryFlags` and `UtilsHelper_isPreview` all read it, so a story page makes one cached call.
+`UtilsHelper_isPreview(context)` is true on a story page whose story is a preview; preview stories get
+`noindex, nofollow`.
 
 `PageHelper_mapSearchParamsToAppContext(controllerParams, customData, cssModules)` builds the
 `AppContext` consumed by every widget.

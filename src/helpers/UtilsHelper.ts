@@ -1,6 +1,7 @@
 // Libraries
 import _ from 'lodash';
 import {APIContext} from "astro";
+import {gql} from "@ringpublishing/graphql-api-client-got";
 import {AppContext, SiteContentType} from "../types/types";
 
 /**
@@ -62,6 +63,47 @@ export function UtilsHelper_isHomepage(context) {
 export function UtilsHelper_getCurrentPageType(context) {
     const isHomePage = UtilsHelper_isHomepage(context);
     return isHomePage ? SiteContentType.Homepage : (context.siteContentType || null);
+}
+
+/**
+ * Flags and preview state (story.publication.preview) of the context story, from one Websites API query.
+ * SeoHelper_checkStoryHiddenFlag, StoryHelper_getStoryFlags and UtilsHelper_isPreview all read it, so a story
+ * page makes one (cached) call for them.
+ * WebsiteApiProvider is imported on first use: a static import would close the cycle
+ * UtilsHelper -> WebsiteApiProvider -> CacheHelper -> UtilsHelper (CacheHelper calls UtilsHelper while loading).
+ */
+export async function UtilsHelper_getStoryFlagsAndPreview(context: AppContext): Promise<{flags: {code: string}[], isPreview: boolean}> {
+    if (!context?.id) {
+        return {flags: [], isPreview: false};
+    }
+    const query = gql`
+        query ($storyId: UUID) {
+            story(id: $storyId) {
+                flags {
+                    code
+                }
+                publication {
+                    preview
+                }
+            }
+        }
+    `;
+    const {WebsiteApiProvider} = await import("../providers/WebsiteApiProvider");
+    const response = await WebsiteApiProvider.call(query, {storyId: context.id});
+    const story = response?.data?.story;
+
+    return {
+        flags: story?.flags || [],
+        isPreview: Boolean(story?.publication?.preview),
+    };
+}
+
+/** True on a story page whose story is a Websites API preview (an unpublished snapshot). */
+export async function UtilsHelper_isPreview(context: AppContext): Promise<boolean> {
+    if (UtilsHelper_getCurrentPageType(context) !== SiteContentType.Story) {
+        return false;
+    }
+    return (await UtilsHelper_getStoryFlagsAndPreview(context)).isPreview;
 }
 
 

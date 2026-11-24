@@ -74,11 +74,11 @@ Generated from the current page URL. For paginated content, canonical may point 
 
 ## 8. Robots Directives
 ```typescript
-SeoHelper_checkStoryHiddenFlag(context)
-// If story has "hidden" flag → <meta name="robots" content="noindex, nofollow">
-StoryHelper_isPreview(context)
-// If story is a preview (story.publication.preview) → <meta name="robots" content="noindex, nofollow">
-// Both are checked in SeoMetaRobots and SeoMetaDecoratorRobots (they win over custom robots meta tags)
+UtilsHelper_getStoryFlagsAndPreview(context) // { flags, isPreview } from one Websites API query
+// Story has "hidden" flag → <meta name="robots" content="noindex, nofollow">
+// Story is a preview (story.publication.preview) → <meta name="robots" content="noindex, nofollow">
+// Checked in SeoMetaRobots and SeoMetaDecoratorRobots (they win over custom robots meta tags)
+// SeoHelper_checkStoryHiddenFlag / UtilsHelper_isPreview read the same (cached) query
 ```
 
 ## 9. Image Preloading
