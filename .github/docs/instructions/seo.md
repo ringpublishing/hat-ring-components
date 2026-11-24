@@ -78,7 +78,7 @@ UtilsHelper_getStoryFlagsAndPreview(context) // { flags, isPreview } from one We
 // Story has "hidden" flag → <meta name="robots" content="noindex, nofollow">
 // Story is a preview (story.publication.preview) → <meta name="robots" content="noindex, nofollow">
 // Checked in SeoMetaRobots and SeoMetaDecoratorRobots (they win over custom robots meta tags)
-// SeoHelper_checkStoryHiddenFlag / UtilsHelper_isPreview read the same (cached) query
+// UtilsHelper_isPreview reads the same (cached) query
 ```
 
 ## 9. Image Preloading

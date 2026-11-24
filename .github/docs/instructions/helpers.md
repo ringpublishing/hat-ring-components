@@ -149,7 +149,7 @@ StoryHelper_getGqlContentFragment()
   // Returns reusable GQL fragment for story content blocks
 
 StoryHelper_getStoryFlags(context)
-  // Story flags (e.g., "hidden", "showupdated"), via UtilsHelper_getStoryFlagsAndPreview
+  // Fetches story flags (e.g., "hidden", "showupdated")
 ```
 
 **Block → HTML mapping:**
@@ -217,7 +217,7 @@ UtilsHelper_isPreview(context)            // Story page showing a preview (story
 
 **Story flags and preview:**
 
-`UtilsHelper_getStoryFlagsAndPreview` asks for `story.flags` and `story.publication.preview` in one query. `SeoHelper_checkStoryHiddenFlag`, `StoryHelper_getStoryFlags` and `UtilsHelper_isPreview` all use it, so on a story page they share one cached Websites API call. Preview stories (like hidden ones) get `<meta name="robots" content="noindex, nofollow">`.
+`UtilsHelper_getStoryFlagsAndPreview` asks for `story.flags` and `story.publication.preview` in one query. `SeoMetaRobots`, `SeoMetaDecoratorRobots` and `UtilsHelper_isPreview` use it, so on a story page they share one cached Websites API call. Preview stories (like hidden ones) get `<meta name="robots" content="noindex, nofollow">`.
 
 **Device detection:**
 

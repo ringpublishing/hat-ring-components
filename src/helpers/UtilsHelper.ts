@@ -67,8 +67,7 @@ export function UtilsHelper_getCurrentPageType(context) {
 
 /**
  * Flags and preview state (story.publication.preview) of the context story, from one Websites API query.
- * SeoHelper_checkStoryHiddenFlag, StoryHelper_getStoryFlags and UtilsHelper_isPreview all read it, so a story
- * page makes one (cached) call for them.
+ * The robots components and UtilsHelper_isPreview read it, so a story page makes one (cached) call for them.
  * WebsiteApiProvider is imported on first use: a static import would close the cycle
  * UtilsHelper -> WebsiteApiProvider -> CacheHelper -> UtilsHelper (CacheHelper calls UtilsHelper while loading).
  */

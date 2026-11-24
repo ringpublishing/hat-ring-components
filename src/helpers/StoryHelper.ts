@@ -1,7 +1,9 @@
 import {ContentBlock, Story} from "@ringpublishing/graphql-api-client-got/dist/types/websites-api";
 import * as convert from "xml-js";
 import _ from "lodash";
-import {UtilsHelper_ensureHttps, UtilsHelper_getStoryFlagsAndPreview} from "./UtilsHelper";
+import {UtilsHelper_ensureHttps} from "./UtilsHelper";
+import { WebsiteApiProvider } from "../providers/WebsiteApiProvider";
+import { gql } from "@ringpublishing/graphql-api-client-got";
 import { AppContext } from "../types/types";
 import {ImageHelper_getImageMetaData} from "./ImageHelper";
 import {LogHelper_debug} from "./LogHelper";
@@ -299,11 +301,45 @@ export function StoryHelper_getGroupContent(storyContentBlocks, groupType: strin
 
 }
 export async function SeoHelper_checkStoryHiddenFlag(context) {
-    const {flags} = await UtilsHelper_getStoryFlagsAndPreview(context);
+    const query = gql`
+        query ($storyId: UUID) {
+            story(id: $storyId) {
+                flags {
+                    code
+                }
+            }
+        }
+    `
 
-    return flags.some((flag) => flag.code === "hidden");
+    const variables = {
+        storyId: context.id,
+    }
+    const response = await WebsiteApiProvider.call(query, variables)
+
+    let isHiddenFlag =
+        response?.data?.story?.flags?.some((flag: {code: string}) => {
+            return flag.code === "hidden"
+        }) || false
+    return isHiddenFlag
 }
 
 export async function StoryHelper_getStoryFlags(context: AppContext): Promise<{ code: string }[]> {
-    return (await UtilsHelper_getStoryFlagsAndPreview(context)).flags;
+    const query = gql`
+        query ($storyId: UUID) {
+            story(id: $storyId) {
+                flags {
+                    code
+                }
+            }
+        }
+    `;
+    const variables = {
+        storyId: context?.id,
+    };
+    if(!variables.storyId) {
+        return [];
+    }
+    const response = await WebsiteApiProvider.call(query, variables)
+
+    return response?.data?.story?.flags || [];
 }
