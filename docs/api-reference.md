@@ -122,6 +122,8 @@ const finalMetadata = await SeoMetaDecoratorRobots(context, metadata);
 | `StoryHelper_getGqlContentFragment` | The GraphQL fragment for article content |
 | `StoryHelper_getGroupContent(blocks, groupName)` | Extracts one named group of blocks |
 | `StoryHelper_getStoryFlags` / `SeoHelper_checkStoryHiddenFlag` | Editorial flags |
+| `StoryHelper_getStoryFlagsAndPreview` | `{ flags, isPreview }` from one Websites API query (`story.flags` + `story.publication.preview`); used by the robots components and `StoryHelper_isPreview`, so a story page makes one cached call |
+| `StoryHelper_isPreview` | True on a story page whose story is a preview; preview stories get `noindex, nofollow` |
 | `Author_getData` / `authorGqlFragment` | Author data and its GraphQL fragment |
 | `AdditionalComponentHelper_insertComponentAtPattern` | Pattern-based insertion into a list of elements |
 | `LinkReplacerHelper_replaceLinks` | Applies link replacer rules from Developer settings |
@@ -157,14 +159,7 @@ const finalMetadata = await SeoMetaDecoratorRobots(context, metadata);
 `isHomepage`, `getCurrentPageType`, `getCurrentNodeName`, `getCurrentNodeCategoryId`,
 `getQueryParam`, `getSearchQueryParamKey`, `isMobile`, `isDevelopmentMode`, `convertToInt`,
 `parsePositiveIntFromString`, `getValueIfExists`, `getExtension`, `generateRandomString`,
-`stripHtmlTags`, `slugify`, `getErrorMessage`, `asyncSequentialForEach`, `asyncParallelForEach`,
-`getStoryFlagsAndPreview`, `isPreview`.
-
-`UtilsHelper_getStoryFlagsAndPreview(context)` returns `{ flags, isPreview }` of the context story from one
-Websites API query (`story.flags` + `story.publication.preview`). The robots components (`SeoMetaRobots`,
-`SeoMetaDecoratorRobots`) and `UtilsHelper_isPreview` read it, so a story page makes one cached call.
-`UtilsHelper_isPreview(context)` is true on a story page whose story is a preview; preview stories get
-`noindex, nofollow`.
+`stripHtmlTags`, `slugify`, `getErrorMessage`, `asyncSequentialForEach`, `asyncParallelForEach`.
 
 `PageHelper_mapSearchParamsToAppContext(controllerParams, customData, cssModules)` builds the
 `AppContext` consumed by every widget.

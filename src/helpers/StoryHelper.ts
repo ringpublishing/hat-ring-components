@@ -1,10 +1,10 @@
 import {ContentBlock, Story} from "@ringpublishing/graphql-api-client-got/dist/types/websites-api";
 import * as convert from "xml-js";
 import _ from "lodash";
-import {UtilsHelper_ensureHttps} from "./UtilsHelper";
+import {UtilsHelper_ensureHttps, UtilsHelper_getCurrentPageType} from "./UtilsHelper";
 import { WebsiteApiProvider } from "../providers/WebsiteApiProvider";
 import { gql } from "@ringpublishing/graphql-api-client-got";
-import { AppContext } from "../types/types";
+import { AppContext, SiteContentType } from "../types/types";
 import {ImageHelper_getImageMetaData} from "./ImageHelper";
 import {LogHelper_debug} from "./LogHelper";
 
@@ -342,4 +342,41 @@ export async function StoryHelper_getStoryFlags(context: AppContext): Promise<{ 
     const response = await WebsiteApiProvider.call(query, variables)
 
     return response?.data?.story?.flags || [];
+}
+
+/**
+ * Flags and preview state (story.publication.preview) of the context story, from one Websites API query.
+ * The robots components and StoryHelper_isPreview read it, so a story page makes one (cached) call for them.
+ */
+export async function StoryHelper_getStoryFlagsAndPreview(context: AppContext): Promise<{flags: {code: string}[], isPreview: boolean}> {
+    if (!context?.id) {
+        return {flags: [], isPreview: false};
+    }
+    const query = gql`
+        query ($storyId: UUID) {
+            story(id: $storyId) {
+                flags {
+                    code
+                }
+                publication {
+                    preview
+                }
+            }
+        }
+    `;
+    const response = await WebsiteApiProvider.call(query, {storyId: context.id});
+    const story = response?.data?.story;
+
+    return {
+        flags: story?.flags || [],
+        isPreview: Boolean(story?.publication?.preview),
+    };
+}
+
+/** True on a story page whose story is a Websites API preview (an unpublished snapshot). */
+export async function StoryHelper_isPreview(context: AppContext): Promise<boolean> {
+    if (UtilsHelper_getCurrentPageType(context) !== SiteContentType.Story) {
+        return false;
+    }
+    return (await StoryHelper_getStoryFlagsAndPreview(context)).isPreview;
 }
