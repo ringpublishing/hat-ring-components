@@ -157,7 +157,14 @@ const finalMetadata = await SeoMetaDecoratorRobots(context, metadata);
 `isHomepage`, `getCurrentPageType`, `getCurrentNodeName`, `getCurrentNodeCategoryId`,
 `getQueryParam`, `getSearchQueryParamKey`, `isMobile`, `isDevelopmentMode`, `convertToInt`,
 `parsePositiveIntFromString`, `getValueIfExists`, `getExtension`, `generateRandomString`,
-`stripHtmlTags`, `slugify`, `getErrorMessage`, `asyncSequentialForEach`, `asyncParallelForEach`.
+`stripHtmlTags`, `slugify`, `getErrorMessage`, `asyncSequentialForEach`, `asyncParallelForEach`,
+`getStoryFlagsAndPreview`, `isPreview`.
+
+`UtilsHelper_getStoryFlagsAndPreview(context)` returns `{ flags, isPreview }` of the context story from one
+Websites API query (`story.flags` + `story.publication.preview`). The robots components (`SeoMetaRobots`,
+`SeoMetaDecoratorRobots`) and `UtilsHelper_isPreview` read it, so a story page makes one cached call.
+`UtilsHelper_isPreview(context)` is true on a story page whose story is a preview; preview stories get
+`noindex, nofollow`.
 
 `PageHelper_mapSearchParamsToAppContext(controllerParams, customData, cssModules)` builds the
 `AppContext` consumed by every widget.

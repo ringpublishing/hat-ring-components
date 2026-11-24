@@ -3,18 +3,19 @@ import {AppContext, SiteContentType} from "../../../types/types";
 import {ConfigHelper_getMetaDataConfig} from "../../../helpers/ConfigHelper";
 import {gql} from "graphql-tag";
 import {WebsiteApiProvider} from "../../../providers/WebsiteApiProvider";
-import { SeoHelper_checkStoryHiddenFlag } from "../../../helpers/StoryHelper"
+import { UtilsHelper_getStoryFlagsAndPreview } from "../../../helpers/UtilsHelper"
 
 export async function SeoMetaRobots(context: AppContext) {
     const actualPageType = context.siteContentType;
     const robots: any = {};
-    let isHiddenFlag = false;
+    let isHiddenOrPreview = false;
 
     if (actualPageType === SiteContentType.Story) {
-       isHiddenFlag = await SeoHelper_checkStoryHiddenFlag(context)
+       const {flags, isPreview} = await UtilsHelper_getStoryFlagsAndPreview(context)
+       isHiddenOrPreview = isPreview || flags.some((flag) => flag.code === "hidden")
     }
 
-    if (isHiddenFlag) {
+    if (isHiddenOrPreview) {
         robots.index = false;
         robots.follow = false;
     } else {
