@@ -107,7 +107,8 @@ These are building blocks for project code rather than configurable widgets.
 | Component | Purpose |
 |---|---|
 | `RingImage` (`.astro` / `.tsx`) | Image with Accelerator Images transformations, preload / priority support, SVG placeholder |
-| `RingImagePreload` | Workaround for a Safari image-preload bug |
+| `RingImageHtml` (`.astro`) | Astro port of `RingImage.tsx` (plain `<img>`, works without width/height); use it instead of the React version in server-rendered code, because @astrojs/react 7 strips the preload `<link>` from React output |
+| `RingImagePreload` | Workaround for a Safari image-preload bug (React; Astro components render the `<link>` themselves) |
 | `RingLink` | Link that strips the configured domain in development mode |
 | `SafeHead` | Filters a slot so only `meta`, `link`, `style` and `script` survive — safe for `<head>` |
 | `TextReplacer` | Applies the text decorators configured in Developer settings |

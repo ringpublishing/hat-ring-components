@@ -1,0 +1,17 @@
+---
+/**
+ * Renders the Grid container/box element with a literal tag for the values Websites Manager offers (main, div, section, aside).
+ *
+ * A dynamic string tag (`<ContainerTag>`) is rendered by Astro like a framework component: its children are pre-rendered to
+ * a string and their render instructions are written BEFORE the element. Since Astro 7 that moves the module `<script>` of a
+ * widget (e.g. EmbeddedApplicationBlock) in front of the whole grid container, right after `</header>`, which breaks
+ * `header + .gridContainer`. Literal tags stream their slot, so scripts stay where the widget renders them.
+ */
+const {tag, ...attributes} = Astro.props as { tag: string, [attribute: string]: any };
+const FallbackTag = tag || 'div';
+---
+{tag === 'main' ? <main {...attributes}><slot/></main>
+    : tag === 'div' ? <div {...attributes}><slot/></div>
+    : tag === 'section' ? <section {...attributes}><slot/></section>
+    : tag === 'aside' ? <aside {...attributes}><slot/></aside>
+    : <FallbackTag {...attributes}><slot/></FallbackTag>}

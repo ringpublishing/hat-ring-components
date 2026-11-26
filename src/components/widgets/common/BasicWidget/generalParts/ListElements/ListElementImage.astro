@@ -1,0 +1,26 @@
+---
+import {AppContext} from "../../../../../../types/types";
+import {BasicWidgetConfig, ListElementImageData} from "../../types";
+import RingImageHtml from "../../../../../common/RingImageHtml.astro";
+import {TransformType} from "../../../../../../helpers/AcceleratorImagesHelper";
+
+const {data} = Astro.props as {
+    context: AppContext,
+    widgetConfig: BasicWidgetConfig,
+    data: ListElementImageData,
+};
+
+const hasDimensions = !!(data.imageDim?.width && data.imageDim?.height);
+
+const ringImageProps = {
+    src: data.url,
+    ...(hasDimensions ? {width: data.imageDim.width, height: data.imageDim.height, transform: TransformType.ResizeCropAuto} : {}),
+    priority: data.priority,
+    alt: (data.customAlt ? data.customAlt : data.caption) || '',
+};
+---
+{data.url &&
+    <div class={['ListElementImage', hasDimensions ? '' : 'listElementImageWrapper'].join(' ')}>
+        <RingImageHtml {...ringImageProps} class={hasDimensions ? '' : 'listElementImageFill'}/>
+    </div>
+}

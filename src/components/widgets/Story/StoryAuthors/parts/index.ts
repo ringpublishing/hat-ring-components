@@ -1,5 +1,5 @@
 export { default as Name } from './Name.astro';
-export { default as Image } from './Image';
+export { default as Image } from './Image.astro';
 export { default as LinkOverlay } from './LinkOverlay.astro';
 export { default as Tagline } from './Tagline';
 export { default as Description } from './Description.astro';

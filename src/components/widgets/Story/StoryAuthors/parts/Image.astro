@@ -1,0 +1,18 @@
+---
+import {AppContext, SiteContentType} from "../../../../../types/types";
+import {StoryAuthorsWidgetConfig} from "../types";
+import {Author} from "@ringpublishing/graphql-api-client-got/dist/types/websites-api";
+import RingImageHtml from "../../../../common/RingImageHtml.astro";
+import {ImageHelper_getImageDimensionsFromObject} from "../../../../../helpers/ImageHelper";
+
+const {context, widgetConfig, author} = Astro.props as {
+    context: AppContext,
+    widgetConfig: StoryAuthorsWidgetConfig,
+    author: Author
+};
+
+const dimensions = ImageHelper_getImageDimensionsFromObject(widgetConfig, context);
+---
+<div class="Image">
+    {author.image?.url ? <RingImageHtml src={author.image.url} priority={context.siteContentType === SiteContentType.Author} alt={author.name} width={dimensions.width} height={dimensions.height}/> : null}
+</div>

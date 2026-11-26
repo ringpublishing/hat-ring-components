@@ -15,7 +15,7 @@
 | HAT_SERVER_SHOW_URLS_IN_CONSOLE | No | false | Debug URL logging |
 | RESPONSE_HEADER_CACHE_CONTROL_MAX_AGE | No | 60 | Cache-Control header max-age |
 | GQL_CACHE_RESET_INTERVAL_SECONDS | No | 300 | GQL client cache reset interval |
-| NEXT_PUBLIC_ACC_IMAGES_ENDPOINT | No | — | Image CDN endpoint |
+| NEXT_PUBLIC_ACC_IMAGES_ENDPOINT | No | — | Image CDN endpoint. Read from the runtime env first, then from the value Vite inlined at build time (Astro >= 6 inlines `import.meta.env` into the bundle) |
 | ONET_SEGMENT | No | — | CDE app start |
 
 ### Components (hat-ring-components):
@@ -146,13 +146,24 @@ Production:  USE_REDIS=1, CACHE_TTL=60, CACHE_TTL_CONFIG=60, CACHE_CLEAN_INTERVA
 ```
 
 ## 7. Astro Configuration (astro.config.mjs)
+Supported Astro versions: `^5.17.1 || ^7.3.2` (peer dependency; the project installs Astro itself). Node >= 22.22.
+
 Key project-level settings:
 ```javascript
 export default defineConfig({
     output: "server",                    // SSR mode
-    adapter: node({ mode: "standalone" }),
+    // "middleware" when run-server.mjs mounts the exported handler in its own Express app: standalone starts a second
+    // listener on import and @astrojs/node >= 11 exits the process when the port is taken
+    adapter: node({ mode: "middleware" }),
     site: "https://your-site.com",
     integrations: [react()],
+    compressHTML: true,                  // Astro 7 default 'jsx' strips whitespace between inline elements
+    security: {
+        // Since astro 5.17.2 the Host header is validated against this list; a host that does not match
+        // (or an https-only pattern hit over plain http) makes Astro.url `http://localhost/...`.
+        // List every host the app is reached by: public domain, beta, internal (webhooks, probes).
+        allowedDomains: [{ hostname: '**.your-site.com' }],
+    },
     vite: {
         resolve: {
             alias: { "@common": "hat-ring-components/src/components/common" }

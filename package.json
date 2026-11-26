@@ -1,6 +1,6 @@
 {
     "name": "hat-ring-components",
-    "version": "4.23.3",
+    "version": "5.0.0-beta.2",
     "description": "Head App Template - RING components",
     "license": "MIT",
     "repository": {},
@@ -9,7 +9,7 @@
     "source": "src/index.ts",
     "types": "src/index.ts",
     "engines": {
-        "node": "^22"
+        "node": ">=22.22.0"
     },
     "private": false,
     "dependencies": {
@@ -22,7 +22,6 @@
         "@ringpublishing/accelerator-images": "^2.3.1",
         "@ringpublishing/graphql-api-client-got": "^4.1.0",
         "@types/node": "*",
-        "astro": "5.17.1",
         "cheerio": "^1.0.0",
         "dayjs": "^1.11.13",
         "feed": "^5.1.0",
@@ -37,10 +36,12 @@
         "@types/node": "^22.0.0",
         "@types/react": "^18.2.38",
         "@types/react-dom": "^18.2.17",
+        "astro": "7.4.0",
         "typescript": "^5.2.2"
     },
     "peerDependencies": {
         "@playwright/test": "^1.57.0",
+        "astro": "^5.17.1 || ^7.3.2",
         "playwright": "^1.57.0"
     },
     "scripts": {

@@ -3,7 +3,7 @@ export * from "./types/types";
 export { default as StoryTitle } from "./components/widgets/Story/StoryTitle/StoryTitle.astro";
 export { default as StoryMainImage } from "./components/widgets/Story/StoryMainImage/StoryMainImage.astro";
 export { default as StoryContent } from "./components/widgets/Story/StoryContent/StoryContent.astro";
-export * from "./components/widgets/common/HtmlInsert";
+export { default as HtmlInsert } from "./components/widgets/common/HtmlInsert.astro";
 export { default as BasicWidget } from "./components/widgets/common/BasicWidget/BasicWidget.astro";
 export { default as ExternalApplication } from "./components/widgets/common/ExternalApplication.astro";
 export { default as StoryLiveBlog } from "./components/widgets/Story/StoryLiveBlog/StoryLiveBlog.astro";

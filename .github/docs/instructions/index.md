@@ -12,7 +12,7 @@ HAT is a three-layer system for building high-performance, server-side rendered 
 | **Components** | `hat-ring-components` | Widgets, helpers, grid system, SEO, styling utilities |
 | **Project** | Your HAT project | Brand identity, custom widgets, project-specific logic |
 
-**Technology stack:** Astro 5 (SSR) · TypeScript · React (optional islands) · SCSS (CSS Modules) · GraphQL (Ring Website API) · Redis/NodeCache
+**Technology stack:** Astro 5.17+ / 7 (SSR, Node >= 22.22) · TypeScript · React (optional islands) · SCSS (CSS Modules) · GraphQL (Ring Website API) · Redis/NodeCache
 
 ---
 
