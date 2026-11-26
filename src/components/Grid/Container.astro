@@ -5,6 +5,7 @@ import React from "react";
 import _ from "lodash";
 import {AppContext} from "../../types/types";
 import Box from "./Box.astro";
+import GridTag from "./GridTag.astro";
 
 import styles from "../../../styles/Grid/Grid.module.scss";
 
@@ -26,7 +27,7 @@ const ContainerTag = sectionConfig ? `${sectionConfig.container_html_tag || 'mai
 
 {toRender === null ?
     <Fragment set:html={toRender}/> :
-    <ContainerTag class={['gridContainer', sectionName, sectionConfig.container_classes, styles.gridContainer].join(' ')}>
+    <GridTag tag={ContainerTag} class={['gridContainer', sectionName, sectionConfig.container_classes, styles.gridContainer].join(' ')}>
         {boxes.map((boxName, i) => {
             return !!sectionConfig[boxName + '_hide'] ? null :
                     <Box
@@ -39,5 +40,5 @@ const ContainerTag = sectionConfig ? `${sectionConfig.container_html_tag || 'mai
                             sectionName={sectionName}
                     />
         })}
-    </ContainerTag>
+    </GridTag>
     }

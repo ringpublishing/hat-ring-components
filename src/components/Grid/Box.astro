@@ -6,6 +6,7 @@ import React from "react";
 import _ from "lodash";
 import {AbstractWidgetConfig, AppContext} from "../../types/types";
 import Widget from "./Widget.astro";
+import GridTag from "./GridTag.astro";
 import styles from "../../../styles/Grid/Grid.module.scss";
 
 //@TODO section config type
@@ -28,10 +29,10 @@ if (wrapperStartCount !== wrapperEndCount) {
 
 ---
 
-<BoxTag class={['gridBox', boxName, 'gridCol' + size, styles.box].join(' ')}>
+<GridTag tag={BoxTag} class={['gridBox', boxName, 'gridCol' + size, styles.box].join(' ')}>
     {filteredWidgets && filteredWidgets.map((widgetConfig, i) => {
         return <>
             {Widget && _.get(widgetConfig, 'enabled', true) && <Widget widgetConfig={widgetConfig} context={context} key={i} index={i} boxName={boxName} sectionName={sectionName} />}
             </>
     })}
-</BoxTag>
+</GridTag>

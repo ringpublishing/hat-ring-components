@@ -1,0 +1,15 @@
+---
+/**
+ * Websites Manager "HtmlInsert" widget: renders `plainHtml` as is.
+ * Astro instead of React: @astrojs/react >= 7 strips `<link rel="preload|stylesheet|preconnect|...">` from React output,
+ * which removed link tags pasted into Websites Manager (e.g. font preloads in the head widgets box).
+ */
+import {AbstractWidgetConfig, AppContext} from "../../../types/types";
+import {WidgetHelper_getWidgetCssClasses} from "../../../helpers/WidgetHelper";
+
+const {widgetConfig, context} = Astro.props as {
+    context: AppContext;
+    widgetConfig: AbstractWidgetConfig & { plainHtml?: string };
+};
+---
+<div class={WidgetHelper_getWidgetCssClasses('HtmlInsert', widgetConfig, context)} set:html={widgetConfig.plainHtml ?? ''}></div>

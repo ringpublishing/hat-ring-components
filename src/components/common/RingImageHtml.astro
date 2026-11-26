@@ -1,0 +1,32 @@
+---
+/**
+ * Astro port of the React `RingImage.tsx`: a plain `<picture><img>` (no astro:assets, so it also works without width/height),
+ * `loading="lazy"` by default, `loading="eager"` + `fetchpriority="high"` + `<link rel="preload">` with `priority`.
+ *
+ * Use it instead of the React `RingImage` in server-rendered components: @astrojs/react >= 7 strips
+ * `<link rel="preload|stylesheet|preconnect|...">` from React output, so the React version loses its preload.
+ */
+import styles from "../../../styles/common/RingImage.module.scss";
+import {UtilsHelper_getExtension} from "../../helpers/UtilsHelper";
+import {AcceleratorImagesHelper_getUrl, TransformType} from "../../helpers/AcceleratorImagesHelper";
+
+const {priority, transform, class: className, ...imgProps} = Astro.props as {
+    src: string,
+    priority?: boolean,
+    transform?: TransformType,
+    class?: string,
+    [attribute: string]: any,
+};
+
+let src = imgProps.src;
+const loading = priority ? 'eager' : 'lazy';
+const fetchpriority = priority ? 'high' : '';
+
+if (UtilsHelper_getExtension(src as string) != 'svg' && (transform || TransformType.None) !== TransformType.None) {
+    src = AcceleratorImagesHelper_getUrl(src, imgProps.width, imgProps.height, transform);
+}
+---
+<picture>
+    <img {...imgProps} transform={transform} loading={loading} fetchpriority={fetchpriority} class={['RingImage', styles.RingImage, className].join(' ')} src={src}/>
+</picture>
+{priority && <link rel="preload" as="image" href="" imagesrcset={src} fetchpriority="high"/>}

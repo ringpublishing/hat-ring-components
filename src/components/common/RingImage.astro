@@ -5,7 +5,6 @@ import {Image, LocalImageProps, RemoteImageProps} from 'astro:assets';
 import styles from "../../../styles/common/RingImage.module.scss";
 import {UtilsHelper_getExtension} from "../../helpers/UtilsHelper";
 import {AcceleratorImagesHelper_getUrl, TransformType} from "../../helpers/AcceleratorImagesHelper";
-import {RingImagePreload} from "./RingImagePreload";
 import {WidgetHelper_renderEmptyComponent} from "../../helpers/WidgetHelper";
 
 export type RingImageProps = LocalImageProps & RemoteImageProps & {
@@ -41,6 +40,8 @@ if (!toRender) {
         <picture>
             <Image {...props} alt={props.alt || ""} src={src} class={['RingImage', styles.RingImage, props.class].join(' ')}/>
         </picture>
-        {props.priority && <RingImagePreload src={src}/>}
+        {/* Rendered by Astro, not by the React RingImagePreload: @astrojs/react >= 7 strips <link rel="preload"> from React output.
+            Empty href: Safari preload workaround, see RingImagePreload.tsx */}
+        {props.priority && <link rel="preload" as="image" href="" imagesrcset={src} fetchpriority="high"/>}
     </Fragment>
 )}
