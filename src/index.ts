@@ -17,6 +17,8 @@ export { default as Menu } from "./components/widgets/common/Menu/Menu.astro";
 export { default as Logo } from "./components/widgets/common/Logo/Logo.astro";
 export { default as Slider } from "./components/widgets/common/Slider/Slider.astro";
 export { default as StoryDate } from "./components/widgets/Story/StoryDate/StoryDate.astro";
+export { default as GooglePreferredSource } from "./components/widgets/Story/GooglePreferredSource/GooglePreferredSource.astro";
+export { default as GooglePreferredSourceIcon } from "./components/widgets/Story/GooglePreferredSource/GooglePreferredSourceIcon.astro";
 export { default as TextReplacer } from "./components/common/TextReplacer.astro";
 export { default as TopicTitle } from "./components/widgets/Lists/TopicTitle/TopicTitle.astro";
 export { default as TopicDescription } from "./components/widgets/Lists/TopicDescription/TopicDescription.astro";

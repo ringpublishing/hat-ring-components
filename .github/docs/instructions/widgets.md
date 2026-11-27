@@ -444,6 +444,7 @@ let response = widgetConfig?.response
 - **StoryMainImage** — Renders the story's hero/featured image
 - **StoryDate** — Renders publication/modification dates
 - **StoryTaxonomyList** — Renders tags and categories for the story
+- **GooglePreferredSource** — Link or button (`displayType`) to add the site as a preferred source in Google Search (Google script only with TCF consent, otherwise a deeplink); text from `text` or translated (`TranslationProvider`); sites style it via `cssModules.GooglePreferredSource` and can replace the Google logo with their own `GooglePreferredSourceIcon` widget
 
 ---
 
