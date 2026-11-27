@@ -53,8 +53,8 @@ if (!domain || context.siteContentType !== SiteContentType.Story || WidgetHelper
         let attempts = 0;
         const listenToConsent = () => {
             if (typeof window.__tcfapi !== 'function') {
-                if (++attempts < 50) {
-                    setTimeout(listenToConsent, 100);
+                if (++attempts < 120) {
+                    setTimeout(listenToConsent, 250);
                 }
                 return;
             }
@@ -63,10 +63,8 @@ if (!domain || context.siteContentType !== SiteContentType.Story || WidgetHelper
                 if (
                     !loaded &&
                     success &&
-                    tcData.gdprApplies === true &&
                     tcData.cmpStatus === 'loaded' &&
-                    tcData.purpose.consents[1] === true &&
-                    tcData.vendor.consents[755] === true
+                    (tcData.gdprApplies === false || (tcData.purpose.consents[1] === true && tcData.vendor.consents[755] === true))
                 ) {
                     loaded = true;
 
