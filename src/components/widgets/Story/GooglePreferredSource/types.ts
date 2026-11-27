@@ -6,6 +6,11 @@ export interface GooglePreferredSourceWidgetConfig extends AbstractWidgetConfig 
     readonly displayType?: 'link' | 'button',
 }
 
+export interface GooglePreferredSourceExtendableAttributes {
+    Icon?: any,
+}
+
 export interface GooglePreferredSourceParams extends WidgetParams {
-    widgetConfig: GooglePreferredSourceWidgetConfig
+    widgetConfig: GooglePreferredSourceWidgetConfig,
+    extendableAttributes?: GooglePreferredSourceExtendableAttributes,
 }

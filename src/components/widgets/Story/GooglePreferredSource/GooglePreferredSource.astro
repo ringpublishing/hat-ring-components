@@ -11,9 +11,9 @@ import type {GooglePreferredSourceParams} from "./types";
 import GooglePreferredSourceIcon from "./GooglePreferredSourceIcon.astro";
 import styles from "../../../../../styles/widgets/Story/GooglePreferredSource.module.scss";
 
-const {context, widgetConfig} = Astro.props as GooglePreferredSourceParams;
+const {context, widgetConfig, extendableAttributes} = Astro.props as GooglePreferredSourceParams;
 
-const Icon = context.customData?.widgets?.GooglePreferredSourceIcon || GooglePreferredSourceIcon;
+const Icon = extendableAttributes?.Icon || GooglePreferredSourceIcon;
 const isButton = widgetConfig.displayType === 'button';
 
 let toRender: boolean | JSX.Element | string = false;
