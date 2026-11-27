@@ -18,6 +18,7 @@ export * from "./components/widgets/Story/StoryMainImage/StoryMainImageWebsitesC
 export * from "./components/widgets/Story/StoryContent/StoryContentWebsitesConfig";
 export * from "./components/widgets/Story/StoryTaxonomyList/StoryTaxonomyListWebsitesConfig";
 export * from "./components/widgets/Story/StoryDate/StoryDateWebsitesConfig";
+export * from "./components/widgets/Story/GooglePreferredSource/GooglePreferredSourceWebsitesConfig";
 export * from "./components/widgets/Story/StoryAuthors/StoryAuthorsWebsitesConfig";
 export * from "./components/widgets/Lists/GenericList/GenericListWebsitesConfig";
 export * from "./configs/DeveloperSettingsWebsitesConfig";
