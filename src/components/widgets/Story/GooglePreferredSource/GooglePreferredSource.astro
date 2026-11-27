@@ -7,32 +7,33 @@ import {
 import {UtilsHelper_getDomain} from "../../../../helpers/UtilsHelper";
 import {SiteContentType} from "../../../../types/types";
 import {TranslationProvider} from "../../../../providers/TranslationProvider";
-import type {GooglePreferredSourceParams} from "./types";
+import type {GooglePreferredSourceParams, GooglePreferredSourceWidgetConfig} from "./types";
 import GooglePreferredSourceIcon from "./GooglePreferredSourceIcon.astro";
 import styles from "../../../../../styles/widgets/Story/GooglePreferredSource.module.scss";
 
 const {context, widgetConfig, extendableAttributes} = Astro.props as GooglePreferredSourceParams;
 
+const config: GooglePreferredSourceWidgetConfig = widgetConfig || {};
 const Icon = extendableAttributes?.Icon || GooglePreferredSourceIcon;
-const isButton = widgetConfig.displayType === 'button';
+const isButton = config.displayType === 'button';
+const domain = config.domain?.trim()
+    || (UtilsHelper_getDomain(context, true) || '').replace(/^[a-z]+:\/\//i, '').replace(/^www\./, '').replace(/[/:?#].*$/, '');
 
 let toRender: boolean | JSX.Element | string = false;
 let text = '';
 let href = '';
-if (context.siteContentType !== SiteContentType.Story || WidgetHelper_shouldHideWidget(widgetConfig, context)) {
-    toRender = WidgetHelper_renderEmptyWidget(widgetConfig);
+if (!domain || context.siteContentType !== SiteContentType.Story || WidgetHelper_shouldHideWidget(config, context)) {
+    toRender = WidgetHelper_renderEmptyWidget(config);
 } else {
-    text = widgetConfig.text?.trim()
+    text = config.text?.trim()
         || await TranslationProvider.translate(context, isButton ? 'Add on Google' : 'Add as a preferred source on Google');
-    const domain = widgetConfig.domain?.trim()
-        || (UtilsHelper_getDomain(context, true) || '').replace(/^[a-z]+:\/\//i, '').replace(/^www\./, '').replace(/[/:?#].*$/, '');
     href = `https://www.google.com/preferences/source?q=${encodeURIComponent(domain)}`;
 }
 ---
 
 {toRender
     ? <Fragment set:html={toRender}/>
-    : <div class={WidgetHelper_getWidgetCssClasses('GooglePreferredSource', widgetConfig, context, [styles.GooglePreferredSource])}>
+    : <div class={WidgetHelper_getWidgetCssClasses('GooglePreferredSource', config, context, [styles.GooglePreferredSource])}>
         <a class={isButton ? 'googlePreferredSourceLink googlePreferredSourceButton' : 'googlePreferredSourceLink'} href={href} target="_blank" rel="noopener">
             <Icon/>
             <span>{text}</span>
@@ -48,35 +49,45 @@ if (context.siteContentType !== SiteContentType.Story || WidgetHelper_shouldHide
         }
     }
 
-    if (document.querySelector('.googlePreferredSourceLink') && typeof window.__tcfapi === 'function') {
-        let loaded = false;
-        window.__tcfapi('addEventListener', 2, (tcData, success) => {
-            if (
-                !loaded &&
-                success &&
-                tcData.gdprApplies === true &&
-                tcData.cmpStatus === 'loaded' &&
-                tcData.purpose.consents[1] === true &&
-                tcData.vendor.consents[755] === true
-            ) {
-                loaded = true;
+    if (document.querySelector('.googlePreferredSourceLink')) {
+        let attempts = 0;
+        const listenToConsent = () => {
+            if (typeof window.__tcfapi !== 'function') {
+                if (++attempts < 50) {
+                    setTimeout(listenToConsent, 100);
+                }
+                return;
+            }
+            let loaded = false;
+            window.__tcfapi('addEventListener', 2, (tcData, success) => {
+                if (
+                    !loaded &&
+                    success &&
+                    tcData.gdprApplies === true &&
+                    tcData.cmpStatus === 'loaded' &&
+                    tcData.purpose.consents[1] === true &&
+                    tcData.vendor.consents[755] === true
+                ) {
+                    loaded = true;
 
-                const publisherScript = document.createElement('script');
-                publisherScript.src = 'https://news.google.com/swg/js/v1/publisher.js';
-                publisherScript.async = true;
-                publisherScript.setAttribute('preferred-sources-control', 'manual');
-                document.head.appendChild(publisherScript);
+                    const publisherScript = document.createElement('script');
+                    publisherScript.src = 'https://news.google.com/swg/js/v1/publisher.js';
+                    publisherScript.async = true;
+                    publisherScript.setAttribute('preferred-sources-control', 'manual');
+                    document.head.appendChild(publisherScript);
 
-                (window.PREFERRED_SOURCE = window.PREFERRED_SOURCE || []).push((preferredSource) => {
-                    preferredSource.init({theme: 'light'});
-                    document.querySelectorAll('.googlePreferredSourceLink').forEach((link) => {
-                        link.addEventListener('click', (event) => {
-                            event.preventDefault();
-                            preferredSource.addPreferredSource();
+                    (window.PREFERRED_SOURCE = window.PREFERRED_SOURCE || []).push((preferredSource) => {
+                        preferredSource.init({theme: 'light'});
+                        document.querySelectorAll('.googlePreferredSourceLink').forEach((link) => {
+                            link.addEventListener('click', (event) => {
+                                event.preventDefault();
+                                preferredSource.addPreferredSource();
+                            });
                         });
                     });
-                });
-            }
-        });
+                }
+            });
+        };
+        listenToConsent();
     }
 </script>
