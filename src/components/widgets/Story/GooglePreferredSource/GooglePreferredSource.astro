@@ -63,8 +63,10 @@ if (!domain || context.siteContentType !== SiteContentType.Story || WidgetHelper
                 if (
                     !loaded &&
                     success &&
+                    tcData.gdprApplies === true &&
                     tcData.cmpStatus === 'loaded' &&
-                    (tcData.gdprApplies === false || (tcData.purpose.consents[1] === true && tcData.vendor.consents[755] === true))
+                    tcData.purpose.consents[1] === true &&
+                    tcData.vendor.consents[755] === true
                 ) {
                     loaded = true;
 
