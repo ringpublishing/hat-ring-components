@@ -59,33 +59,38 @@ if (!domain || context.siteContentType !== SiteContentType.Story || WidgetHelper
                 return;
             }
             let loaded = false;
+            let hasConsent = false;
             window.__tcfapi('addEventListener', 2, (tcData, success) => {
-                if (
-                    !loaded &&
-                    success &&
-                    tcData.gdprApplies === true &&
+                if (!success) {
+                    return;
+                }
+                hasConsent = tcData.gdprApplies === true &&
                     tcData.cmpStatus === 'loaded' &&
                     tcData.purpose.consents[1] === true &&
-                    tcData.vendor.consents[755] === true
-                ) {
-                    loaded = true;
+                    tcData.vendor.consents[755] === true;
+                if (!hasConsent || loaded) {
+                    return;
+                }
+                loaded = true;
 
-                    const publisherScript = document.createElement('script');
-                    publisherScript.src = 'https://news.google.com/swg/js/v1/publisher.js';
-                    publisherScript.async = true;
-                    publisherScript.setAttribute('preferred-sources-control', 'manual');
-                    document.head.appendChild(publisherScript);
+                const publisherScript = document.createElement('script');
+                publisherScript.src = 'https://news.google.com/swg/js/v1/publisher.js';
+                publisherScript.async = true;
+                publisherScript.setAttribute('preferred-sources-control', 'manual');
+                document.head.appendChild(publisherScript);
 
-                    (window.PREFERRED_SOURCE = window.PREFERRED_SOURCE || []).push((preferredSource) => {
-                        preferredSource.init({theme: 'light'});
-                        document.querySelectorAll('.googlePreferredSourceLink').forEach((link) => {
-                            link.addEventListener('click', (event) => {
-                                event.preventDefault();
-                                preferredSource.addPreferredSource();
-                            });
+                (window.PREFERRED_SOURCE = window.PREFERRED_SOURCE || []).push((preferredSource) => {
+                    preferredSource.init({theme: 'light'});
+                    document.querySelectorAll('.googlePreferredSourceLink').forEach((link) => {
+                        link.addEventListener('click', (event) => {
+                            if (!hasConsent) {
+                                return;
+                            }
+                            event.preventDefault();
+                            preferredSource.addPreferredSource();
                         });
                     });
-                }
+                });
             });
         };
         listenToConsent();
