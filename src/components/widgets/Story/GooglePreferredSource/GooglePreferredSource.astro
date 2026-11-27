@@ -61,10 +61,8 @@ if (!domain || context.siteContentType !== SiteContentType.Story || WidgetHelper
             let loaded = false;
             let hasConsent = false;
             window.__tcfapi('addEventListener', 2, (tcData, success) => {
-                if (!success) {
-                    return;
-                }
-                hasConsent = tcData.gdprApplies === true &&
+                hasConsent = success &&
+                    tcData.gdprApplies === true &&
                     tcData.cmpStatus === 'loaded' &&
                     tcData.purpose.consents[1] === true &&
                     tcData.vendor.consents[755] === true;
